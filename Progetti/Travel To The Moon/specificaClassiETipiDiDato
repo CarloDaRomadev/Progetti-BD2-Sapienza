@@ -1,0 +1,111 @@
+Travel To The Moon: specifica
+
+Specifica tipi di dato:
+
+	tipoCodice = stringa secondo regex interna
+	tipoIndirizzo = tipo composto {via: Stringa, numeroCivico: int}
+	tipoGiorno = enum{lun,mar,...,dom}
+	tipoLuna = {alternativa, tradizionale}
+	tipoDest = {romatica, divertente, entrambe}
+
+-----------------------------
+
+Specifica classe Crociera:
+
+	vincoli esterni:
+
+	[V.Crociera.dataI_minore_dataF]
+		ALL c, di, df
+		Crociera(c) AND dataI(c, di) AND dataF(c, df) ->
+			di <= df
+
+
+	[V.Crociera.numeroMaxPasseggeri_maggioreOuguale_numeroPostiPrenotati]
+		ALL p,c,n,numpre,numpass
+			Prenotazione(p) AND Crociera(c) AND cr_pr (c,p) AND Nave(n) AND cr_na(c,n) AND
+				numeroPaseggeri(n,numpass) AND numeroPostiPrenotati(p,numpre) ->
+					sommatoria di n in insiemePrenotazioni* <= numpass
+
+		insiemePrenotazioni = {n | intero(n) AND numeroPostiPrenotati(p,n)}
+
+
+	[V.Crociera.prenotazione_entroDataDiPartenza]
+		ALL c,p,i,di,dp
+			Crociera(c) AND Prenotazione(p) AND cr_pr(c,p) AND IstantePrenotazione(p,i) AND dataI(c,di) AND data(i, dp) ->
+				dp < di
+
+
+	[V.Crociera.cliente_nasce_primaDi_prenotare]
+		ALL c,dn,i,p,cl,di
+			Crociera(c) AND Prenotazione(p) AND Cliente(cl) AND cl_pr(cl,p) AND istantePrenotazione(p,i) AND dataDiNascita(cl,dn) AND data(i,di) ->
+				dn < di
+
+	operazioni:
+
+		categoria(): tipoLuna
+		preCondizioni:
+			nessuna
+		postCondizioni:
+			R = {d | EXIST i,t,r Destinazione(d) AND Itinerario(i) AND Tappa(t) AND de_ta(d,t) AND it_ta(i,t) AND cr_it(.this,i) AND tipoDestinazione(d,r) AND r = "romantica"}		//definisco l'insieme R (Romantiche) come l'insieme delle destinazioni toccate dall'itinerario della crociera chiamante (.this) con attributo tipoDestinazione = romantica
+			D = {d | EXIST i,t,r Destinazione(d) AND Itinerario(i) AND Tappa(t) AND de_ta(d,t) AND it_ta(i,t) AND cr_it(.this,i) AND tipoDestinazione(d,r) AND r = "divertente"}	// // = divertente
+			|R| >= |D| -> result = Tradizionale
+			AND
+			result = Alternativa
+
+		dataF(): data
+		preCondizioni:
+			nessuna
+		postCondizioni:
+			g | EXIST i,d,g Itinerario(i) AND Ultima(i,d) AND giornoArrivo(i,d,g)
+			start | dataI(.this,start)
+			result = g + start
+
+-----------------------------
+
+Specifica Classe Cliente
+	
+	operazioni:
+
+		età(): int > 0 
+		PreCondizioni:
+			nessuna
+		PostCondizioni:
+			date | EXIST d dataDiNascita(.this,d) 
+			result = Anno(now) - date
+
+-----------------------------
+
+Specifica Classe Tappa
+
+	Vincoli esterni:
+
+	[V.Tappa.giornoArrivo_primaOuguale_giornoPartenza]
+	ALL T,ga,gp giornoArrivo(T,ga) AND giornoPartenza(T,gp) ->
+		ga <= gp
+
+	[V.Tappa.NonIntrecciareTappe]
+	ALL T1,	ga1, gp1, oa1 , op1, T2, ga2, gp2, oa2, op2
+		giornoArrivo(T1, ga1) AND giornoArrivo(T2, ga2) AND giornoPartenza(T1, gp1) AND giornoPartenza(T1, gp2) AND 
+		oraArrivo(T1, oa1) AND oraArrivo(T2, oa2) AND oraPartenza(T1, op1) AND oraPartenza(T1, op2) ->
+		(ga1 > ga2 AND gp1 > gp2) OR (ga1 < ga2 AND gp1 < gp2) OR (ga1 = ga2 AND oa1 > oa2 AND op1 > op2) OR (ga1 = ga2 AND oa1 < oa2 AND op1 < op2) 
+
+	[V.Tappa.NonCiSonoTappePrimaDellaPrimaTappa]
+	ALL d,o,it Prima(d,it) AND oraPartenza(d,it,o) -> 
+		NOT EXIST t,i Tappa(t) AND it_ta(it,t) AND oraPartenza(t,i) AND i<o AND giornoPartenza(t,0)
+
+	[V.Tappa.NonCiSonoTappeDopoL'ultimaTappa]
+	ALL d,o,it,lg Ultima(d,it) AND oraArrivo(d,it,o) AND giornoArrivo(d,it,lg) -> 
+		NOT EXIST t,i,g Tappa(t) AND it_ta(it,t) AND oraPartenza(t,i) AND i>o AND giornoPartenza(t,g) AND g = lg
+		AND 
+		NOT EXIST t,g Tappa(t) AND it_ta(it,t) AND g > lg
+
+-----------------------------
+
+Specifica Classe FasciaOraria
+
+	[V.FasciaOraria.nonIntrecciareFasceOrarie]
+	ALL p,f1,g1,oraI1,oraF1,f2,g2,oraI2,oraF2
+		PostoDaVedere(p) AND fa_po(f1,p) AND fa_po(f2,p) AND giorno(f1,g1) AND giorno(f2,g2) AND oraI(f1,oraI1) AND oraI(f2,oraI2) AND oraF(f2,oraF2) AND oraF(f1,oraF1) ->
+			(g1 != g2) OR (g1 = g2 AND oraI1 > oraI2 AND oraF1 > oraF2) OR (g1 = g2 AND oraI1 < oraI2 AND oraF1 < oraF2)
+
+-----------------------------

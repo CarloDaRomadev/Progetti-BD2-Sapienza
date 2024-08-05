@@ -1,0 +1,44 @@
+Travel To The Moon: raffinazione requisiti
+
+1. Crociera
+	codice
+	data inizio
+	data fine
+	nave utilizzata
+	itinerario
+	
+	tradizionale (se destinazioni più (>=) romantiche che divertenti) o alternativa
+
+	1.1 luna di miele
+	1.2 per famiglia
+		1.2.1 adatta ai bambini
+
+2. Nave
+	nome
+	grado comfort
+	numero massimo passeggeri
+
+3. Itinerario
+	nome
+	sequenza ordinata di destinazioni (ordinate in base a data e ora di arrivo e ripartenza relativi al primo giorno ex: malta, arrivo 5 giorni dopo partenza alle ore 09:00) 
+
+4. Destinazione
+	nome
+	continente
+	romantica o divertente o entrambe
+
+5. Posto da vedere
+	nome
+	descrizione
+	fascia oraria consigliata per visite
+
+6. Cliente
+	nome
+	cognome
+	età
+	indirizzo
+
+7. Prenotazione
+	istante
+	crociera
+	numero posti
