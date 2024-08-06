@@ -1,0 +1,36 @@
+vincoli esterni persi durante la ristrutturazione e adattamento tipi di dato:
+	[V.Crociera.complete]
+	ALL c Crociera C ->
+		EXIST l,f isa_lu(c,l) OR isa_fa(c,f)
+
+	[V.Crociera.disjoint]
+	ALL c Crociera C -> 
+		not EXIST l,f isa_lu(c,l) AND isa_fa(c,f)
+
+	//controllare correttezza
+
+	ora -> time;
+	bool -> boolean;
+	dataora -> datetime;
+	int -> integer;
+	float -> real;
+	stringa -> varchar;
+	3 <= i <= 5 -> create domain as integer
+		check 3 <= value <= 5
+
+	int >= 0 -> create domain as integer 
+		check value >= 0;
+
+	int > 0 -> create domain as integer
+		check value > 0;
+
+	tipoCodice -> create type as varchar
+		check value is like %...	;
+
+	tipoIndirizzo = create type as 
+					(via: varchar
+					numeroCivico: integer);
+
+	tipoGiorno = create type as enum (lun,mar,...,dom);
+	tipoLuna = create type as enum (alternativa, tradizionale);
+	tipoDest = create type as enum (romatica, divertente, entrambe);

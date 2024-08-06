@@ -1,0 +1,54 @@
+specifica UseCase:
+
+Prenotare(c: crociera, num: int): 
+preCondizioni:
+	P = {i | EXIST p numeroPostiPrenotati(p,i) AND cr_pr(c,p)}
+	ALL n,na numeroPasseggeri(na,n) AND cr_na(c,na) -> 
+		num <= n - sommatoria su P
+postCondizioni:
+	Prenotazione(alpha)
+	istantePrenotazione(alpha,now)
+	numeroPostiPrenotati(alpha,num)
+	cr_pr(alpha,c)
+
+-------------------
+stats
+
+
+StatsEtà(pi:data, pf:data): float
+preCondizioni:
+	C = {c | EXIST i,p,cr,d,co,t,ist,datap 
+		Cliente(c) AND cl_pr(c,p) AND cr_pr(cr,p) AND cr_it(cr,i) AND
+		co_de(d,c) AND c != "Europa" AND istantePrenotazione(p,ist) AND 
+		data(ist,datap) AND pi <= datap <= pf(inizio(i,d) OR fine(i,d) OR
+		(it_ta(i,t) AND de_ta(d,t))}
+	C not empty
+postCondizioni:
+	E = {e | EXIST c,i,p,cr,d,co,t,ist,datap 
+		Cliente(c) AND Età(c,e) AND cl_pr(c,p) AND cr_pr(cr,p) AND cr_it(cr,i) AND
+		co_de(d,c) AND c != "Europa" AND istantePrenotazione(p,ist) AND 
+		data(ist,datap) AND pi <= datap <= pf(Prima(i,d) OR Ultima(i,d) OR
+		(it_ta(i,t) AND de_ta(d,t))}
+	Result = sommatoria degli elementi di E / |E|
+
+
+
+Gettonata_singola(d:destinazione, pi:data, pf:data):bool		//"func ausiliaria"
+preCondizioni:
+	nessuna
+postCondizioni:
+	L = {c | EXIST i,t [((Prima(i,d) OR Ultima(i,d)) OR (it_ta(i,t)) AND de_ta(d,t)] AND cr_it(c,i) AND CrocieraLunaDiMiele(c)}
+	F = {c | EXIST i,t [((Prima(i,d) OR Ultima(i,d)) OR (it_ta(i,t)) AND de_ta(d,t)] AND cr_it(c,i) AND CrocieraPerFamiglia(c)}
+	|L| = 10 -> result = True
+	AND
+	|F| = 15 -> result = True
+	AND
+	result = False
+
+
+
+Gettonate_universale(pi:data, pf:data):	float < 1
+preCondizioni:
+	nessuna
+postCondizioni:
+	D = {d | EXIST i,t Destinazione(d) AND Gettonata_singola(d, pi, pf, True)}
