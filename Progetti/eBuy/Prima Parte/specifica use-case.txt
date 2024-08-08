@@ -1,0 +1,44 @@
+specifica use-case
+
+Segnatura operazioni
+
+use-case iscrizione
+	iscrizionePrivato(nick: stringa):privato
+	iscrizioneProfessionista(nick: stringa, url: tipoUrl):professionista
+
+use-case vendere
+	vendiCSnuovo(nome: stringa, descrizione:stringa, prezzo: float >= 0, m: metodoDiPagamento[1..*], anniGaranzia: int>=2): Cs
+	vendiAstanuovo(nome: stringa, descrizione: stringa, prezzoIniziale: float>= 0, ammontareRialzi: float>0, anniGaranzia: int>=0, c: tipoCond) : Asta
+	vendiCSusato(nome: stringa, descrizione:stringa, prezzo: float >= 0, m: metodoDiPagamento[1..*], anniGaranzia: int>=2): Cs
+	vendiAstausato(nome: stringa, descrizione: stringa, prezzoIniziale: float>= 0, ammontareRialzi: float>0, anniGaranzia: int>=0, c: tipoCond ): Asta
+
+use-case comprare
+	compraCs(cs: Cs)
+	proporreBID(asta: Asta)
+
+use-case feedback
+	lasciaFeedback(p: Post, v: 0..5, commento: stringa[0..1])
+
+use-case stats
+	popolarità(p: Professionista): tipoPop
+		preCondizioni
+			EXIST post Post(post) AND po_ut(post,p)
+		postCondizioni
+			Va = {a | EXIST pr,b,t Asta(a) AND as_bid(a,b) AND bid_pri(b,pr) AND po_ut(a,p) AND time(b,t) AND t >= now() - 12 mesi  }
+			Vcs = {c | EXIST pr,t cs_pr(c,pr) AND po_ut(c,p) AND cs_pr(c,pr,t) AND t >= now() - 12 mesi}
+		
+			(|Va| + |Vcs|) > 300 -> result = 'alta'
+			AND 
+			50 <= (|VA| + |Vcs|) <= 300 -> result = 'media'
+			AND
+			(|Va| + |Vcs|) < 50 -> result = 'bassa'
+
+	affidabilità(u: Utente): floatPositivo <= 1 	
+		preCondizioni
+			EXIST pr Privato(pr) AND Feedback(pr,u)
+		postCondizioni
+			TOT = {f | EXIST pr,v Feedback(pr,u,f) AND voto(f,v)}
+			NEG = {f | EXIST pr,v Feedback(pr,u,f) AND voto(f,v) AND v <= 2}
+			m = (sommatoria di tutti gli elementi di TOT / |TOT|)				//media aritmetica
+			z = (|NEG|/|TOT|)
+		result = (m*(1-z))/5

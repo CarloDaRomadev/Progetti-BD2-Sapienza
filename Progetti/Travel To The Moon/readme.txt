@@ -1,0 +1,1 @@
+modificare la ristrutturazione della generalizzazione da isa a tutto nella classe crociera, da questa modifica otterrei molti benefici a livello id tempistiche perché eviteri dei join

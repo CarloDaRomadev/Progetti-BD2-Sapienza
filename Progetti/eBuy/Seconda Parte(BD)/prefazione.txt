@@ -1,0 +1,22 @@
+tipi di dato compatibili con il DBMS
+	stringa -> varchar
+
+	int -> integer
+
+	float -> reale
+
+	0..5 -> create domain 0..5 as interger
+		check 0 <= value <= 5
+
+	date -> date
+
+	int >= 0 -> create domain int>=0 as integer
+		check value >= 0
+
+	int >= 2 -> create domain int>=2 as integer
+		check value >= 2
+
+	tipoCond = create domain tipoCond as enum()
+
+
+

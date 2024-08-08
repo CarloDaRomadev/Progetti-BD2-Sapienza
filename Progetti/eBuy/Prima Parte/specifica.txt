@@ -1,0 +1,68 @@
+specifica dei tipi di dati
+	tipoUrl : stringa secondo regex
+	tipoCond : enum {ottimo, buono, discreto, daSistemare}
+
+specifica classe AstaConclusa
+	vincoli esterni:
+	[V.AstaConclusa.prezzoIniziale<=prezzoFinale]
+		ALL a, pi, pf
+		AstaConclusa(a) AND prezzoIniziale(a,pi) AND prezzoFinale(a,pf) ->
+			pi<pf
+
+	operazioni:
+		aggiudicante(): Privato
+		preCondizioni
+			Exist b Bid(b) and as_bid(.this, bid)
+		postCondizioni
+			result = bid_max | Bid(bid_max) AND as_bid(.this,bid_max) AND 
+			ALL t1,t2 
+				NOT EXIST b2 Bid(b2) AND as_bid(.this, b2) AND time(bid_max, t1) AND time(b2, t2) AND t1 < t2
+
+
+		prezzoFinale(): float >= 0
+		preCondizioni
+			Exist b Bid(b) and as_bid(.this, bid)
+		postCondizioni
+			B = {bid | Bid(bid) AND as_bid(.this, bid)}
+			ALL r valoreRialzo(.this,r)									//giusto???
+			result = r*(|B|-1)
+
+specifica classe Post
+	vincoli esterni:
+	[V.Post.Cs_non_comprato_da_se_stesso]
+		ALL p,u Privato(p) AND cs_pr(.this,p) AND po_ut(p,u) 
+			-> 
+			p != u
+
+	[V.Post.Asta_utente_non_rilancia_sulla_sua_asta]
+		ALL p,u,b Privato(p) AND bid_pr(b,p) AND as_bid(.this,b) AND po_ut(p,u)
+			-> 
+			p != u
+
+	[V.Post.Feedback_asta_solo_se_vincitore_asta]
+		ALL p pr Asta(p) AND p.aggiudicante() != pr 
+			->	
+			NOT Feedback(pr,p)
+
+	[V.Post.Feedback_CS_solo_se_acquirente]
+		ALL p pr Cs(p) AND NOT cs_pr(p,pr) 
+		    ->
+			NOT Feedback(pr,p)
+		
+	[V.Post.bid_entro_scadenza_asta]
+		ALL b,a,t,s Bid(b) AND as_bid(a,b) AND time(b,t) AND scadenzaAsta(a,s) 
+			-> 
+			t <= s
+
+specifica classe Categoria
+	operazioni:
+	sub_cat(): Categoria[0..*]
+	preCondizioni
+		nessuna
+	postCondizioni
+		B = {c | Categoria(c) AND sub_super_cat(.this,c)}
+		result = B UNION {c | Categoria(c) AND sub_super_cat(b,c) AND b in B}
+
+	vincoli esterni:
+	[V.Categoria.Non_creare_cespuglio]
+	ALL c,b sub_super_cat(b,c) -> NOT sub_cat(c,b)		//controlla
