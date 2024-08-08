@@ -1,0 +1,193 @@
+Vincoli e Operazioni per database
+	Operazioni:
+		dataf(c:Crociera) : date
+			select u.giornoArrivo
+			from ultima as u
+			join itinerario as i on u.itinerario = i.nome
+			where i.nome = c.itinerario
+
+
+		età(c:Cliente) : int > 0
+			select dataDiNascita 
+			from c
+			res = now-d
+
+		categoria(c:CrocieraLunaDiMiele) : tipoLuna
+			R = select d 
+				from Destinazione as d, Itinerario as i, Tappa as t, Prima as p, Ultima as u
+				where ( (t.destinazione = d.nome AND t.itinerario = i.id AND c.itinerario = i.id) OR 
+						(u.destinazione = d.id AND u.itinerario = i.id AND c.itinerario = i.id) OR
+						(p.destinazione = d.id AND p.itinerario = i.id AND c.itinerario = i.id) ) AND 
+									d.tipoDestinazione = 'Romantica'
+				
+			D = select d 
+				from Destinazione as d, Itinerario as i, Tappa as t, Prima as p, Ultima as u
+				where ( (t.destinazione = d.nome AND t.itinerario = i.id AND c.itinerario = i.id) OR 
+						(u.destinazione = d.id AND u.itinerario = i.id AND c.itinerario = i.id) OR
+						(p.destinazione = d.id AND p.itinerario = i.id AND c.itinerario = i.id) ) AND 
+									d.tipoDestinazione = 'divertente'
+
+
+			if |R| >= |D| {result  = "Tradizionale"}
+			else {result = "Alternativa"}
+
+	Trigger:
+1.  [T.dataI_minore_dataF]
+		il trigger in questione deve scattare quando si inserisce un nuovo Oggetto Crociera
+		T = not exist (select *
+						from crociera as c
+						where c.dataI > dataf(c))
+
+		if T == True{
+			continue
+		}
+		else{
+			roleback
+		}
+
+2.	[T.numeroPasseggeri_maggiore_o_uguale_ai_posti_prenotati]
+		il trigger in questione deve scattare quando si inserisce un nuovo oggetto Prenotazione
+		T = not exist (with P as (select p.crociera as codice, sum(p.numeroPostiPrenotati) as sommatoria
+								  from Prenotazione as P
+								  join Crociera as c on p.crociera = c.codice
+								  group by c.codice)
+
+					   select *
+					   from Nave as n
+					   join Crociera as c on n.nome = c.nave
+					   join P on P.codice = c.codice
+					   where P.sommatoria > n.numeroPasseggeri
+
+		if T == True{
+			continue
+		}
+		else{
+			roleback
+		}
+
+3.	[T.non_ci_sono_prenotazioni_dopo_partenza]
+		il trigger in questione deve scattare quando si inserisce un nuovo oggetto Prenotazione
+		T = not exist (select *
+					   from Prenotazione as p
+					   join Crociera as c on p.crociera = c.codice
+					   where c.dataI < data(p.istantePrenotazione))
+
+		if T == True{	
+			continue
+		}
+		else{
+			roleback
+		}
+
+4.  [T.cliente_nasce_prima_di_prenotare]
+		il trigger in questione deve scattare quando si inserisce un nuovo oggetto Prenotazione
+		T = not exist (select *
+					   from Prenotazione as p
+					   join cliente as c on p.cliente = c.id
+					   where date(p.istantePrenotazione) > c.dataDiNascita )
+
+		if T == True{
+			continue
+		}
+		else{
+			roleback
+		}
+
+5.	[T.non_ci_sono_tappe_prima_della_prima_tappa]
+	il trigger scatta all'inserimento di un nuovo oggetto Tappa
+		T = not exist (select *
+					   from Prima as p, Tappa as t, Itinerario as i
+					   where (t.itinerario = i.nome AND p.itinerario = i.nome)
+					   		AND t.giornoArrivo = 0 AND t.oraArrivo < p.oraPartenza)
+
+		if T == TRUE{
+			continue
+		}
+		else{
+			roleback
+		}
+
+6.	[T.non_ci_sono_tappe_dopo_l'ultima_tappa]
+	il trigger scatta all'inserimento di un nuovo oggetto Tappa
+	T = not exist (select *
+				   from Ultima as u, Tappa as t, Itinerario as i
+				   where (t.itinerario = i.nome AND u.itinerario = i.nome)
+				   		AND ( (t.giornoArrivo = u.giornoArrivo AND t.oraPartenza > u.oraArrivo) OR 
+				   			(t.giornoArrivo > u.giornoArrivo) )
+
+	if T == TRUE{
+		continue
+	}
+	else{
+		roleback
+	}
+
+7.	[T.non_intrecciare_tappe]
+	il trigger deve scattare all'inserimento di una nuova tappa
+		T = not exist(select * 
+					  from Tappa as t1, Tappa as t2
+					  where (t1.giornoArrivo < t2.giornoArrivo AND t1.giornoPartenza > t2.giornoPartenza) OR
+					  		 t1.giornoArrivo = t2.giornoArrivo AND t1.giornoPartenaza = t2.giornoPartenza and t1.oraArrivo < t2.oraArrivo AND t2.oraPartenza > t2.oraPartenza)
+
+	if T == True{
+		continue
+	}
+	else{
+		roleback
+	}
+
+8.	[T.giorno_arrivo_minoreOuguale_giorno_partenza]
+	il trigger scatta all'inserimento di un nuovo oggetto Tappa
+		T = not exist(select * 
+					  from Tappa as t
+					  where (t.giornoArrivo > t.giornoPartenza) OR
+					  		 t.giornoArrivo = t.giornoPartenza AND t.oraArrivo > r.oraPartenza)
+
+	if T == True{
+		continue
+	}
+	else{
+		roleback
+	}
+
+9.	[T.non_intrecciare_fasce_orarie]
+	T = not exist(select * 
+				  from fasciaOraria as f1, fasciaOraria as f2
+				  where f1.giorno = f2.giorno AND f1.postoDaVedere = f2.postoDaVedere AND f1.oraI < f2.oraI AND f1.oraF > f2.oraF)
+
+	if T == True{
+		continue
+	}
+	else{
+		roleback
+	}
+
+
+10. [T.crociera.complete]
+	T = not exist(select * 
+				  from Crociera as c
+				  where c.codice not in (select CrocieraPerFamiglie.crociera
+				  						 from CrocieraPerFamiglie)
+			  			     AND not in (select CrocieraLunaDiMiele.crociera
+			  				    		 from CrocieraLunaDiMiele)
+
+	if T == True{
+		continue
+	}
+	else{
+		roleback
+	}
+
+11. [T.crociera.disjoint]
+	T = not exist(select * 
+				  from Crociera as c
+				  where c.codice in (select CrocieraPerFamiglie.crociera
+				  						 from CrocieraPerFamiglie)
+			  			     AND in (select CrocieraLunaDiMiele.crociera
+			  				    		 from CrocieraLunaDiMiele)
+		if T == True{
+		continue
+	}
+	else{
+		roleback
+	}		  				    		 

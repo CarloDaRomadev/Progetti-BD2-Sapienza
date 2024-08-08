@@ -83,11 +83,15 @@ Specifica Classe Tappa
 	ALL T,ga,gp giornoArrivo(T,ga) AND giornoPartenza(T,gp) ->
 		ga <= gp
 
+	[V.Tappa.giornoArrivo_uguale_giornoPartenza_Allora_ora_arrivo_minore_ora_partenza]
+	ALL T,ga,gp,oa,op giornoArrivo(T,ga) AND giornoPartenza(T,gp) AND oraArrivo(T,oa) AND oraPartenza(T,op) AND ga = gp ->
+		oa < op
+
 	[V.Tappa.NonIntrecciareTappe]
 	ALL T1,	ga1, gp1, oa1 , op1, T2, ga2, gp2, oa2, op2
 		giornoArrivo(T1, ga1) AND giornoArrivo(T2, ga2) AND giornoPartenza(T1, gp1) AND giornoPartenza(T1, gp2) AND 
 		oraArrivo(T1, oa1) AND oraArrivo(T2, oa2) AND oraPartenza(T1, op1) AND oraPartenza(T1, op2) ->
-		(ga1 > ga2 AND gp1 > gp2) OR (ga1 < ga2 AND gp1 < gp2) OR (ga1 = ga2 AND oa1 > oa2 AND op1 > op2) OR (ga1 = ga2 AND oa1 < oa2 AND op1 < op2) 
+		! ((ga1 > ga2 AND gp1 < gp2) OR (ga1 = ga2 AND gp1 = gp2 AND oa1 > oa2 AND op1 < op2))
 
 	[V.Tappa.NonCiSonoTappePrimaDellaPrimaTappa]
 	ALL d,o,it Prima(d,it) AND oraPartenza(d,it,o) -> 

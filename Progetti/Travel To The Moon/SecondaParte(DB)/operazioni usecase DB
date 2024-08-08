@@ -1,0 +1,78 @@
+Operazioni DB
+
+1. prenotare(numeroposti : integer, crociera : Crociera): Prenotazione
+	preCondizioni
+		T = not exist (with P as (select p.crociera as codice, sum(p.numeroPostiPrenotati) as sommatoria
+								  from Prenotazione as P
+								  where p.crociera = crociera.codice
+								  group by c.codice)
+
+					   select *
+					   join Nave as n on crociera.codice
+					   join P on P.codice = crociera.codice
+					   where P.sommatoria > n.numeroPasseggeri
+
+		if T == True{
+			consenti operazione
+		}
+		else{
+			non consentire operazione e marca la crociera come full
+		}
+	postCondizioni
+		insert into Prenotazione (now() , numeroposti, prossimo id disponibile, crociera .this)
+
+
+2. statsEtà(pi: data, pf: data) : float
+	preCondizioni
+		exist (select *
+			   from Itinerario as i, Crociera as c, Prima as p, Ultima as u, Tappa as t, Destinazione as d, Continente as cont
+			   where c.itinerario = i.nome AND ((t.itinerario = i.nome AND t.destinazione = d.id) OR 
+			   									(p.itinerario = i.nome AND p.destinazione = d.id) OR
+			   									(u.itinerario = i.nome AND p.destinazione = d.id) )) AND d.cont != 'Europa' 
+
+	if T == True and (pi < pf) {
+		consenti operazione
+	}
+	else{
+		non consentire operazione e marca la crociera come full
+	}	
+			   									
+	postCondizioni
+		Q = select cl.età 	// età(cl) in realtà dato che età è una operazione...
+			from Itinerario as i, Crociera as c, Prima as p, Ultima as u, Tappa as t, Destinazione as d, Continente as cont, cliente as cl, Prenotazione as pr
+			where c.itinerario = i.nome AND (((t.itinerario = i.nome AND t.destinazione = d.id) OR 
+		   									  (p.itinerario = i.nome AND p.destinazione = d.id) OR
+		   									  (u.itinerario = i.nome AND p.destinazione = d.id) )) AND d.cont != 'Europa')
+		   						     	AND pr.cliente = cliente.id and pr.crociera = c.codice
+
+	   	res = avg(Q)
+
+3. Gettonata(pi: data, pf: data) : reale <= 1
+	preCondizioni
+		if pi < pf{
+			consenti operazione
+		}
+		else {NON consentire operazione}
+	postCondizioni
+		with L as (select count(c.codice) as conto, d.id as id
+				   from Itinerario as i, Crociera as c, Prima as p, Ultima as u, Tappa as t, CrocieraLunaDiMiele as l
+				   Destinazione as d, Continente as cont, cliente as cl, Prenotazione as pr
+				   where c.itinerario = i.nome AND (((t.itinerario = i.nome AND t.destinazione = d.id) OR 
+		   									         (p.itinerario = i.nome AND p.destinazione = d.id) OR
+		   									         (u.itinerario = i.nome AND p.destinazione = d.id) )) AND l.crociera = c.codice)
+		   		   group by d.id,
+		F as (select count(c.codice) as conto, d.id as id
+			  from Itinerario as i, Crociera as c, Prima as p, Ultima as u, Tappa as t, CrocieraPerFamiglie as f
+			  Destinazione as d, Continente as cont, cliente as cl, Prenotazione as pr
+			  where c.itinerario = i.nome AND (((t.itinerario = i.nome AND t.destinazione = d.id) OR 
+	   									        (p.itinerario = i.nome AND p.destinazione = d.id) OR
+	   									        (u.itinerario = i.nome AND p.destinazione = d.id) )) AND f.crociera = c.codice
+	   		  group by d.id,
+		
+		Q = select d.id
+			from Destinazione as d, L, F
+			where (L.id = d.id and L.conto >= 10) OR (R.id = d.id and L.conto >= 15)
+
+		res = |Q| / (|select d
+					 from Destinazione as d|)
+
