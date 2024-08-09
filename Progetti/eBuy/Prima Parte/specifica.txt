@@ -1,13 +1,18 @@
 specifica dei tipi di dati
 	tipoUrl : stringa secondo regex
 	tipoCond : enum {ottimo, buono, discreto, daSistemare}
+	tipoPop : enum {bassa, media, alta}
 
 specifica classe AstaConclusa
 	vincoli esterni:
 	[V.AstaConclusa.prezzoIniziale<=prezzoFinale]
 		ALL a, pi, pf
 		AstaConclusa(a) AND prezzoIniziale(a,pi) AND prezzoFinale(a,pf) ->
-			pi<pf
+			pi < pf
+
+	[V.AstaConclusa.Non_Conclusa_Se_Scadenza_Asta_>_now()]
+		ALL a,s AstaConclusa(a) Ans scadenzaAstra(a,s) ->
+			s < now() 
 
 	operazioni:
 		aggiudicante(): Privato
@@ -60,9 +65,9 @@ specifica classe Categoria
 	preCondizioni
 		nessuna
 	postCondizioni
-		B = {c | Categoria(c) AND sub_super_cat(.this,c)}
-		result = B UNION {c | Categoria(c) AND sub_super_cat(b,c) AND b in B}
+		B = {c | Categoria(c) AND sub_super_cat(c,.this)}
+		result = B UNION {c | Categoria(c) AND sub_cat(b,c) AND b in B}
 
 	vincoli esterni:
 	[V.Categoria.Non_creare_cespuglio]
-	ALL c,b sub_super_cat(b,c) -> NOT sub_cat(c,b)		//controlla
+	ALL c NOT sub_cat(c,c)

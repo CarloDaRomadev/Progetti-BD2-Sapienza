@@ -3,7 +3,37 @@ tipi di dato compatibili con il DBMS
 
 	int -> integer
 
+	int > 0 -> create domain intg0 as integer
+		check value > 0
+
 	float -> reale
+
+	float > 0 -> create domain floatg0 as reale
+		check value > 0
+
+	float >= 0 -> create domain floatge0 as reale
+		check value >= 0
+
+	floatPositivo <= 1 -> n create domain reale_tra_0_e_1 as reale 
+		check 0 <= value <= 1
+
+	dataora -> dateTime
+
+	data -> date
+
+	ora -> time
+
+	float > 0 -> create domain float_positivo as reale
+		check value > 0
+
+	tipoUrl -> create domain tipoUrl as varchar
+		check value like ... //regex
+
+	tipoPop -> create domain tipoCond as enum('bassa', 'media', 'alta')
+
+	bool -> boolean
+
+	tipoNoU -> create domain tipoNoU as enum('nuovo', 'usato')
 
 	0..5 -> create domain 0..5 as interger
 		check 0 <= value <= 5
@@ -16,7 +46,7 @@ tipi di dato compatibili con il DBMS
 	int >= 2 -> create domain int>=2 as integer
 		check value >= 2
 
-	tipoCond = create domain tipoCond as enum()
+	tipoCond -> create domain tipoCond as enum('ottimo', 'buono', 'discreto', 'daSistemare')
 
 
 

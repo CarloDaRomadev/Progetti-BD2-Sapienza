@@ -1,0 +1,263 @@
+PARTE 2)
+
+vincoli esterni aggiunti o modificati a seguito della ristrutturazione:
+
+[V.Utente.complete]
+ALL u Utente(u) -> (EXIST pri isa_pri(u,pri)) OR (EXIST pro isa_pro(u,pro))
+
+[V.Utente.disjoint]
+ALL u Utente(u) -> NOT EXIST pri,pro isa_pri(u,pri) AND isa_pro(u,pro)
+
+[V.Post.complete]
+ALL p Post(p) -> (EXIST a isa_a(p,a)) OR (EXIST cs isa_cs(p,cs))
+
+[V.Post.disjoint]
+ALL p Post(p) -> NOT EXIST a, cs (isa_a(p,a) AND isa_cs(p,cs))
+
+[V.Post.condizioneSeSoloSeUsato]
+ALL p,s Post(p) AND nuovoOusato(p,s) AND s == 'usato' <-> EXIST c Condizioni(p,c)
+
+[V.garanzia>=2SeNuovo]
+ALL p,g,s Post(p) AND garanzia(p,g) AND nuovoOusato(p,s) AND s = 'nuovo' -> g >= 2
+
+[V.Asta.conclusaSeScadenzaNelPassato]	//modificato
+ALL	a,c,d Asta(a) AND scadenzaAsta(a,d) AND Conclusa(a,c) AND c == TRUE -> d < now()
+
+TRIGGER E OPERAZIONI
+
+OPERAZIONI:
+
+crerate funcion prezzoFinale(a: intg0): realege0
+	Q = select count(b.id) as conto
+		from Bid as b
+		join Asta as asta on b.asta = asta.id
+		where asta.id = a
+
+	res = asta.valoreRialzo * (Q.conto -1)
+
+crerate funcion aggiudicante(a: intg0) : intg0
+	with Q as (select p.id as id, max(b.time) 
+			  from Privato as p, Bid as b
+			  join Asta as asta on asta.id = b.asta
+			  where asta.id = a AND p.id = b.privato)
+	select id
+	from Q as q
+
+crerate funcion sub_cat(c: varchar) : insieme di varchar
+	Q = select cat.nome
+		from Categoria as cat
+		join sub_super_cat as ssc on ssc.sub = cat.nome
+		where ssc.super = c
+
+	res = for c1 in Q{
+			sub_super_cat(c1)
+		  }						//chiamata ricorsiva
+
+TRIGGER:
+	[T.AstaConclusa_prezzoFinale>PrezzoIniziale]
+	il trigger scatta quando l'asta si conclude
+		isvalid = not exist(select *
+							 from Asta as a
+							 where a.prezzoIniziale > prezzoFinale(a.id)) AND a.conclusa = TRUE
+
+		if isvalid == TRUE{
+			continue
+		}
+		else{
+			rollback
+		}
+
+	[T.AstaConclusa_Se_Scadenza_nel_passato]
+	il trigger scatta quando un'asta si conclude
+		isvalid = not exist(select * 
+							from Asta as a 
+							where a.scadenzaAsta > now() and conclusa = TRUE)
+		if isvalid == TRUE{
+			continue
+		}
+		else{
+			rollback
+		}
+
+	[T.Cs_non_comprato_da_venditore]
+	il trigger scatta quando un utente prova a comprare un post di tipo cs
+		isvalid = not exist(select * 
+							from Cs as cs, Post as po, Utente as u, Privato as pr
+							where cs.post = po.id and po.utente = u.id and cs_pr.post = po and cs_pr.privato = pr)
+		if isvalid == TRUE{
+			continue
+		}
+		else{
+			rollback
+		}
+
+	[T.utente_non_rilancia_sulla_sua_asta]
+	il trigger scatta quando un utente prova a proporre un bid
+		isvalid = not exist(select *
+							from Asta as a, Post as po, Utente as u 
+							join Bid as b on a.id = (b.asta)         //BASTA!!!!
+							join Privato as pr on pr.id = b.privato
+							where asta.post = po.id and asta.utente = u.username and privato.utente = u.id
+							)
+		if isvalid == TRUE{
+			continue
+		}
+		else{
+			rollback
+		}
+
+	[T.Feedback_asta_solo_se_vincitore_asta]
+	il trigger scatta quando un utente prova a dare un feedback
+		isvalid = not exist(select *
+							from Asta as a, Post as p
+							join Feedback as f on p.id = f.post
+							join Privato as pr on pr.id = f.privato 
+							where p.id = a.post AND aggiudicante(a.id) != pr.id)
+		if isvalid == TRUE{
+			continue
+		}
+		else{
+			rollback
+		}
+
+	[T.Feedback_cs_solo_se_acquirente]
+	il trigger scatta quando un utente prova a dare un feedback
+		isvalid = not exist(select *
+							from CS as cs
+							join Post as p on cs.post = p.id
+							join cs_pr on cs.id = cs_pr.cs
+							join Privato as pr on cs_pr.privato = pr.id
+							join Feedback as f on f.post = p.id
+							where f.privato != pr.id)
+	    if isvalid == TRUE{
+			continue
+		}
+		else{
+			rollback
+		}
+
+	[T.bid_proposti_prima_di_scadenza_asta]
+	il trigger scatta quando si prova a proporre un bid
+		isvalid = not exist(select *
+							from Asta as a
+							join Bid as b on b.asta = a.id
+							where a.scadenzaAsta < b.time)
+		if isvalid == TRUE{
+			continue
+		}
+		else{
+			rollback
+		}
+
+	[T.non_creare_cespuglio_di_categorie]
+	il trigger scatta quando si aggiungono nuove categorie
+		if c in sub_cat(c){
+			rollback
+		}
+		else{
+			continue
+		}
+
+	[T.Utente.Complete_disjoint]
+	il trigger scatta all'iscrizione di un nuovo utente
+		isvalid = not exist (
+				  select *
+				  from Utente as u
+				  u left outer join Professionista as pro
+				  	on pro.utente = u.userName
+				  u left outer join Privato as pri
+				  	on pri.utente = u.userName
+				  where (pro.id is null and pri.id is null) or 
+				  		(pro.id is not null and pri.id is not null)
+				  )
+	if isvalid == TRUE{
+		continue
+	}			
+	else{
+		rollback
+	}  	
+
+	[T.Post.Complete_disjoint]
+	il trigger scatta all'introduzione di un nuovo post
+	isvalid = not exist (
+			  select *
+			  from Post as p
+			  u left outer join Asta as a
+			  	on a.utente = p.id
+			  u left outer join Cs as c
+			  	on c.utente = p.id
+			  where (a.id is null and c.id is null) or 
+			  		(a.id is not null and c.id is not null)
+			  )
+	if isvalid == TRUE{
+		continue
+	}			
+	else{
+		rollback
+	}  	
+
+	[V.Post.condizioneSeSoloSeUsato]
+	il trigger scatta all'introduzione di un nuovo post
+	isvalid = not exist (select * 
+					     from Post as p
+					     where p.nuovoOusato == 'nuovo' AND p.condizioni is not null 
+					     AND p.nuovoOusato == 'usato' AND p.condizioni is null)
+	if isvalid == TRUE{
+		continue
+	} 
+	else{
+		rollback
+	}
+
+	[V.garanzia>=2SeNuovo]
+	il trigger scatta all'introduzione di un nuovo post
+	isvalid = not exist (select * 
+					     from Post as p
+					     where p.nuovoOusato == 'nuovo' AND p.garanzia < 2)
+	if isvalid == TRUE{
+		continue
+	} 
+	else{
+		rollback
+	}
+
+
+Operazioni USE-CASE:
+	
+	popolarità(id_pro: intg0) : tipoPop
+		A = select count(b.privato) as conto
+			from Post as p
+			join Professionista as pro on p.utente = pro.id
+			join Asta as a on p.id = a.post
+			join Bid as b on b.asta = a.id
+			where pro.id = id_pro
+
+		C = select count(cs_pr.cs) as conto
+			from Post as p
+			join Professionista as pro on p.utente = pro.id
+			join Cs as c on c.post = p.id
+			join cs_pr on c.id = cs_pr.cs
+			where pro.id = id_pro
+
+		if A.conto + C.conto < 50{
+			result = 'bassa'
+		}
+		if 50 <= A.conto + C.conto <= 300{
+			result = 'media'
+		}
+		if A.conto + C.conto > 300{
+			result = 'alta'
+		}
+
+	affidabilità(id_ut: intg0): float_tra_0_e_1
+		TOT = select avg(f.voto)
+			  from Feedback as f
+			  where Feedback.utente = id_ut
+
+		NEG = select sum()
+			  from Feedback as f
+			  where Feedback.utente = id_ut AND feedback.voto <= 2
+
+		result = {TOT.avg * [1 - (NEG.sum / |TOT|)]} /5          
+
+		//tipo di parentesi in questo caso rappresenta la priorità
