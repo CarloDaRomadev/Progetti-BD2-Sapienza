@@ -1,0 +1,9 @@
+1. Ho confuso bidAggiudicante() con acquirente()
+
+2. aggiungere acquirente() come operazione in post e farla ereditare da asta e cs semplifica moltissimo i vincoli esterni //da riutilizzare in altri progetti
+
+3. Nella associazione 'Feedback' ho confuso i valori.
+
+4. Per rendere più espandibile il tutto posso modificare 'condizioni' in 'Usato' da un attributo ad una classe associata ad usato
+
+5. è superfluo e sgraziato gestire le aste conluse (in generale è superfluo e poco elegante gestire il tempo nelle classi con le generalizzazioni)
