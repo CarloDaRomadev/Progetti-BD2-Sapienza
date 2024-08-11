@@ -1,0 +1,65 @@
+use-case Registrazione:
+Registrazione(nick: stringa): UtenteRgistrato
+
+use-case Pubblica:
+PubblicaVideo(file: tipoFile, titolo: stringa, descrizione: stringa, tag: Tag[1..*], cat: Categoria):Video
+PubblicaVideoRisposta(videoAcuiRispondere: Video, file: tipoFile, titolo: stringa, descrizione: stringa, tag: Tag[1..*], cat: Categoria):Video
+
+use-case Interaggisci:
+valuta(video: Video, voto: 0..5):Valutazione
+Commenta(video: Video, contenuto: Stringa): Commento
+visualizza(video: Video): Visualizzazione
+
+use-case Naviga:
+cercaVideoPerTitolo(s: Stringa): Video[0..*]
+	
+1.	cercaVideoAvanzato(c: Categoria, t: Tag[1..*], voto: 0..5): Video[0..*]
+	preCondizioni:
+		nessuna
+	postCondizioni:
+		V = {v Video(v) | EXIST tag 
+								ca_vi(c,v) AND ta_vi(tag,v) AND tag in t AND 
+						  ALL votinx 
+		                        ValutazioneMedia(v,votinx) AND (votinx >= voto or votinx = Null)
+		                  AND NOT VideoCensurato(v)}
+		    }		
+		//considero t come se fosse un set
+		result = V
+
+1.1	#ausiliaria
+	valutazioneMedia(video: V): float >= 0[0..1]
+	preCondizioni:
+		NOT VideoCensurato(v)
+	postCondizioni:
+		V = {votinx | EXIST u valutazione(u,v) AND voto(u,v,votinx)}
+		V not empty ->
+			result = (sommmatoria su V) / |V|
+		AND
+			result = Null
+
+2.	cercaPerCategoria(c: Categoria)
+	preCondizioni:
+		nessuna
+	postCondizioni:
+		V = {v | EXIST vri 
+			ca_vi(c,v) AND vi_vi.ri(v,vri) AND 
+		 ALL n numeroVideoRisposta(v,n) 
+		 NOT EXIST v2,n2 ca_vi(c,v2) AND NumeroVideoRisposta(v2,n2) AND n2 > n}
+		 result = V
+
+2.1 #ausiliaria
+	numeroVideoRisposta(v: Video): int >= 0
+	preCondizioni:
+		NOT VideoCensurato(v)
+	postCondizioni:
+		result = |{vid | VideoRisposta(vid,v) AND NOT VideoCensurato(vid)}| //ritorno la cardinalità
+
+cercaPlaylist(u: Utente): Playlist[0..*]
+
+use-case censura:
+censuraVideo(video: Video, motivo: motivazione): VideoCensurato
+
+use-case Playlist:
+creaPlaylist(n:nome, v:Video[0..*]): Playlist
+aggiungiVideo(p: playlist, v:Video)
+rimuoviVideo(p: Playlist, v:Video)

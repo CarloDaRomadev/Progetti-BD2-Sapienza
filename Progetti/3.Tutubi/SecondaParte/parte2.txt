@@ -1,0 +1,135 @@
+Funzioni:
+
+1. create function as durata(v: varchar): TipoDurata
+	Q = select v2.file
+		from video as v2
+		where v2.nomeFInDb = v
+
+	result = estrapolaDurata(Q)		//estrapolaDurata è una funzione comune nei DB.
+
+2. create function as views(v: varchar): intgez
+	Q = select count(*)
+		from video as v2, visualizzazione as vis
+		where visualizzazione.video = v2
+
+	result = Q
+
+Triggers:
+1.	[T.videoRisposta.Utente_non_si_risponde_da_solo]
+	il trigger scatta all'aggiunzione di un nuovo video con attributo VideoRisposta = TRUE
+	is valid = notExist(select *
+						from video as v
+						join (vi_vi.ri) as vr on v.nomefileindb = vr.video
+						where vr.utente = v.utente)
+
+	if isvalid = TRUE{
+		continue
+	}
+	else{
+		rollback
+	}
+
+2.  [T.Utente_deve_visualizzare_per_commentare_e/o_valutare]
+	il trigger scatta all'aggiunzione di un nuovo commento/valutazione
+	Q = select u.nome
+		from Video as v
+		join Visualizzazione as vis on vis.video = v.nomeFinDB 
+		join UtenteRegistrato as u on u.nome = vis.utente 
+
+	C = select u.nome
+		from Video as v
+		join Commento as c on c.video = v.nomeFinDB 
+		join UtenteRegistrato as u on u.nome = c.utente 
+
+	S = select u.nome
+		from Video as v
+		join Valutazione as val on val.video = v.nomeFinDB 
+		join UtenteRegistrato as u on u.nome = val.utente 
+
+	if C in Q AND S in Q{			// con "in" intendo contenuto.
+		continue
+	}
+	else{
+		rollback
+	}
+
+
+3.  [T.Utente.non_valuta_suo_video]
+	il trigger scatta all'aggiunta di una nuova valutazione
+	is valid = not Exist(select *
+						 from Video as v
+						 join valutazione as val on v.nomeFinDB = val.video
+						 where v.utente = val.utente)
+
+	if is valid == TRUE{
+		continue
+	}
+	else{
+		rollback
+	}
+
+4.	[T.UtenteRegistrato_fa_azioni_dopo_iscrizione]
+	il trigger scatta all'introduzione di un nuovo commento or una nuova valutazione or una nuova playlist
+	is valid = not Exist(select *
+					     from UtenteRegistrato as u
+					     left outer join Playlist as p on p.utente = u.nome
+					     left outer join Commento as c on c.utente = u.nome
+					     left outer join Visualizzazione as v on v.utente = u.nome
+					     where p.dataCreazione < u.dataIscrizione
+					     or date(c.time) < u.dataIscrizione
+					     or date(v.time) < u.dataIscrizione)
+	if is valid == TRUE{
+		continue
+	}
+	else{
+		rollback
+	}
+
+5.	[T.VideoInPlaylist.NonSaltareVideo]
+	il trigger scatta all'aggiunzione/rimozione di video in una playlist e alla creazione di una playlist
+	Q = select i.numeroInOrdine
+		from playlist as p
+		join VideoInPlaylist as i on i.playlist = p.id
+		ord asc i.numeroInOrdine
+
+	for j = 1 in Q{
+		if Q[j] != Q[j-1] + 1{
+			rollback
+		}
+	}
+	if Q[0] != 0{
+		rollback
+	}
+	continue
+
+6.	[V.Video.Motivazione_sesolose_censurato]
+	il trigger scatta quando un video viene caricato
+	is valid = not exist (select * 
+						  from video as v
+						  where v.censura = TRUE and v.Motivazione = NULL OR
+						  		v.censura = FALSE and v.Motivazione != NULL)
+	if is valid == TRUE{
+		continue
+	}
+	else{
+		rollback
+	}
+
+
+7.  [V.Video.Risposta_sesolose_rispondeAVideo]
+	il trigger scatta all'aggiunta di un nuovo video
+	is valid = not exist (select * 
+						  from video as v
+						  left outer join vi_vi.ri as vr on vr.risposta = v.nomeFinDB
+						  where v.videoRisposta == TRUE and vr.video = NULL
+						  OR
+						  v.videoRisposta == FALSE and vr.video != NULL)
+
+	if is valid == TRUE{
+		continue
+	}
+	else{
+		rollback
+	}
+
+Use-case

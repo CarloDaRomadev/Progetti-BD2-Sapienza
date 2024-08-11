@@ -1,0 +1,41 @@
+sostituzione tipi di dato:
+	int -> integer
+	float -> reale
+	int>0 -> create domain intgz as integer
+		check value > 0
+
+	int>=0 -> create domain intgez as integer
+		check value >= 0
+
+	float>0 -> create domain realegz as reale
+		check value > 0
+
+	float >= 0 -> create domain realegez as reale
+		check value >= 0
+
+	0..5 -> create domain as zc as integer
+		check 0 <= value <= 5
+
+	0..59 -> create domain as zcn as integer
+		check 0 <= value <= 59
+
+	dataora -> dateTime
+	data -> date
+	ora -> time
+	TipoPlaylist = create type tipoPlaylist as enum(Publica, Privata)
+	stringa -> varchar
+	TipoFile -> BLOB 
+	Durata -> create domain durata as (ore: intgz, minuti: zcn, secondi: zcn)
+
+nuovi vincoli introdotti o vincoli modificati
+#aggiunti
+1.	[V.Video.Motivazione_sesolose_censurato]
+	ALL v Video censurato(v,true)  <-> EXIST m mo_vi(m,v)
+
+2.	[V.Video.Risposta_sesolose_rispondeAVideo]
+	ALL v Video videoRisposta(v,true)  <-> EXIST v2 vi_vi.ri(v,v2)   
+
+#modificato
+3.  [V.VideoRisposta.Utente_non_si_risponde_da_solo]
+	ALL v1,u1,v2,u2 Video(v1) AND Video(v2) AND pubblica(v1,u1) AND pubblica(v2,u2) AND vi_vi.ri(v1,v2) -> 
+		u1 != u2

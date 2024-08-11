@@ -1,0 +1,43 @@
+specifica tipi di dato:
+
+tipoDurata = {ore: int >= 0, minuti: intPositivo <= 59, secondi: intPositivo <= 59}
+tipoFile = {file binario}
+
+specifica classe Video:
+	operzioni:
+1.	durata(): tipoDurata
+		x | EXIST f file(.this,f) AND durata(f,x) //assumiamo che esista un metodo durata per estrapolare la durata di un video 
+		res = x
+
+2.	views(): int>=0
+		V = {vis | vid_vis(.this, vis)}
+		result = |V|
+
+specifica classe VideoRisposta:
+	vincoli esterni:
+1.	[V.VideoRisposta.Utente_non_si_risponde_da_solo]
+		ALL v1,u1,v2,u2 VideoRisposta(v1) AND Video(v2) AND pubblica(v1,u1) AND pubblica(v2,u2) AND vi_vi.ri(v1,v2) -> 
+			u1 != u2	
+
+	//questo vincolo evita ache di creare loop (video che si rispondono da soli)
+
+specifica classe UtenteRegistrato:
+	operazioni:
+	vincoli esterni:
+1.  [V.UtenteRegistrato.Se_utente_non_visualizza_non_esiste_commento_o_valutazione]
+		ALL v,u Video(v) AND UtenteRegistrato(u) AND NOT EXIST vis vid_vis(v,vis) AND ut_vi(u,v) ->
+			(NOT EXIST c co_ut(c,u) AND co_vi(c,v)) AND NOT (valutazione(v,u))
+
+2.	[V.UtenteRegistrato.azioni_dopo_iscrizione]
+		ALL u,d UtenteRegistrato(u) AND dataDiIscrizione(u,d) -> NOT EXIST p,v,c,dp,dv,doc,dc (pl_ut(p,u) AND dataCreazione(p,dp) AND dp < d) 
+	    AND (ut_vi(u,v) AND time(v,dv) AND dv < d)
+	    AND (co_ut(c,u) AND time(c,doc) AND data(doc,dc) AND dc < d)
+
+3. [V.UtenteRegistrato.non_valuta_suo_video]
+		ALL u,v Valutazione(u,v) -> NOT pubblica(u,v)
+
+specifica classe VideoInPlaylist:
+	Vincoli esterni:
+1.	[V.VideoInPlaylist.non_Saltare_Numeri]
+		ALL v,o,p VideoInPlaylist(v) AND numeroOrdine(v,o) AND pl_vipl(p,v) and (o != 0) -> 
+			EXIST v2,o2 numeroOrdine(v2, (o-1)) AND pl_vipl(p,vipl) 
