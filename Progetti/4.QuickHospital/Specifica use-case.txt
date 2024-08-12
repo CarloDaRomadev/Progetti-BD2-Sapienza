@@ -1,0 +1,55 @@
+useCase aggiungiPazienteInt
+	aggiungi(nome: stringa, cognome: stringa, dataDiNascita: date, indirizzo: tipoaddr, mail: tipomail):PazienteInterno
+
+useCase StrumentiRicoveri:
+	prescrivi(d:date, p:Persona, l:letto):Ricovero
+	preCondizioni:
+		NOT EXIST r le_ri_c(l,r) AND d > now()
+	postCondizioni
+		nuove Tuple:
+			Ricovero(alpha)
+			pa_ri(p,alpha)
+			le_ri_c(l,alpha)
+			dataInizio(alpha,d)
+
+	congeda(r: Ricovero): RicoveroTerminato
+
+useCase Storico
+	storico(): RicoveroTerminato[0..*]
+
+useCase creaGiroVisite(): Stanza[0..*]
+	creaGiro(): Stanza
+	preCondizioni:
+		nessuna
+	postCondizioni:
+		S = {s| EXIST l,r,p le_st(l,s) and le_ri_c(l,r) and pa_ri(p,r) and me_pa(.this,p)}
+		result = sort(S,comparazione_minore)   //ordino l'insieme utilizzando la funzione quì sotto
+
+#ausiliaria
+	comparazione_minore(st1: Stanza, s2: Stanza): bool
+		(ALL s1,p1,s2,p2 se_st(s1,st1) and se_st(s2,st2) and pi_se(p1,s1) and p1_se(p2,s2)) ->
+		(s1 < s2 and p1 = p2 -> result = 1
+		and
+		p1 < p2 -> result = 1
+		and 
+		result = 0)
+
+useCase StrumentiPrestazione:
+	AccettaPrestazione(p: Prestazione): Confermata
+	RifiutaPrestazione(p: Prestazione)
+
+	CercaMedico(s: Specializzazione): Medico[1..*]
+	preCondizioni:
+		ALL d Exist m Medico(m) and generale(m,s) and disponibile(m,d) and d = TRUE
+	postCondizioni:
+		Prim = {m | ALL d Medico(m) and generale(m,s) and primaria(m,s) and disponibile(m,d) and d = TRUE}
+		Seco = {m | ALL d Medico(m) and generale(m,s) and disponibile(m,d) and d = TRUE}
+	Prim = insieme vuoto -> result = Seco
+	and 
+	result = Prim
+
+use case AggiungiPazienteExt:
+	aggiungi(nome: stringa, cognome: stringa, dataDiNascita: date, ):PazienteEsterno
+
+useCase RichiediPrestazione:
+	richiedi(data: date, specializzazione: Specializzazione, descrizione: stringa)

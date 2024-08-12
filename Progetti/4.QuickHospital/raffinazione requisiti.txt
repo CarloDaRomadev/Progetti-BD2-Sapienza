@@ -1,0 +1,36 @@
+Pazienti
+	nome
+	cognome
+	data di nascita
+	email
+	postale
+
+Medici
+	nome
+	cognome
+	data di nascita
+	elenco dei pazienti in cura
+	specializzazione Primaria
+	specializzazioni Secondarie
+
+Stanza
+	numero letti (1..0)
+	numero piano
+	numero settore
+
+Paziente esterno
+	nome
+	cognome
+	data di nascita
+
+Prestazione Richiesta
+	data richiesta
+	descriziione
+	specializzazione richiesta
+
+
+vincoli individuati:
+	letto non saltare numeri
+	non intercciare ricoveri
+	medico non si cura da solo
+	medico non cura se ricoverato

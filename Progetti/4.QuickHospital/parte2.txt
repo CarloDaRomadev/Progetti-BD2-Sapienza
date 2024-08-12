@@ -1,0 +1,119 @@
+Funzioni
+create function disponibile(m: intgz)
+	Q = select *
+		from Medico as me
+		join Persona as p on me.persona = p.id
+		left outer join Paziente as pa on p.id = pa.persona
+		left outer join PazienteEsterno as pe on p.id = pe.persona
+		left outer join Ricovero as r on r.paziente = pa.id
+		left outer join PrestazioneExt as pr on pr.pazienteEsterno = pe.id
+		where me.id = m and ((pr.confermata = true and dataRichiesta = date(now())) or (r.dataInizio < date(now()) < r.dataFine))
+	if Q is null 
+		{return true}
+	else 
+		{return false}
+
+
+TRIGGERS:
+[T.nonSaltareLetti]
+	Q = not exist (select l.numero, s.id
+		from letto as l
+		join stanza as s on l.stanza = s.id
+		order by l.numero, l.stanza asc)
+
+	fare un ciclo for per accertarsi che i letti non vengano saltati...?
+
+[T.NonIntrecciareDateRicoveri]
+trigger scatta all'introduzione di un nuovo ricovero
+	isValid = not exist (select * 
+			  from Ricovero as r1, Ricovero as r2
+			  join Paziente as p on r1.paziente = p.id and r2.paziente = p.id
+			  where r1 != r2 and r1.datai < r2.datai and r1.dataf > r2.dataf)
+
+    if isValid = True{
+    	continue
+    }
+    else{
+    	rollback
+    }
+
+[T.InizioRicoveroPrimaDiFine]
+trigger scatta alla terminazione di un ricovero
+	isValid = not exist (select * 
+			  from Ricovero as r
+		      where  r.dataf < r.datai)
+
+    if isValid = True{
+    	continue
+    }
+    else{
+    	rollback
+    }
+
+[T.DataFinePrimaDiAdesso]
+trigger scatta alla terminazione di un ricovero
+	isValid = not exist (select * 
+			  from Ricovero as r
+			  where r.terminato = true and r.dataf < now())
+
+    if isValid = True{
+    	continue
+    }
+    else{
+    	rollback
+    }
+
+[T.persona.NonInCuraDaSeStesso]
+	isValid = not exist (select * 
+		      from Paziente as p
+		      join Persona as pe on pe.id = p.persona
+		      join Medico as m on pe.id = m.persona
+		      where p.medico = m.id)
+
+    if isValid = True{
+    	continue
+    }
+    else{
+    	rollback
+    }		      
+
+[T.persona.nascePrimaDiCompiereAzioni]
+	isValid = not exist (select *
+						 from Persona as p
+						 left outer join paziente as pa on p.id = pa.persona
+						 left outer join pazienteEsterno as pe on p.id = pe.persona
+						 left outer join PrestazioneEsterna as pe on pe.pazienteEsterno = p.id
+						 left outer join Ricovero as r on r.paziente = pa.id
+						 where (r.dataI < p.dataDiNascita) or (pr.dataRichiesta < p.dataDiNascita and p.confermata = true))
+--------------
+Operazioni:
+
+cercaMedico(s: varchar): intgz[0..*]
+	PRI =  (select medico.id
+			from medico as m
+			join primaria as p on p.medico = m.id 
+		    where p.specializzazione = s and disponibile(m.id) = true) 
+
+	SEC =  (select medico.id
+			from medico as m
+			join secondaria as p on p.medico = m.id 
+		    where p.specializzazione = s and disponibile(m.id) = true)
+
+    if PRI == NULL{
+    	retur SEC
+    }
+    else{
+    	return PRI
+    }
+
+creaGiroVisite(m: intgz): (x: intgz,y: intgz)[0..*]
+	Q = select pia.numero, set.numero
+		from Letto as l
+		join le_ri as lr on lr.letto = L.id
+		join Ricovero as r on lr.ricovero = r.id
+		join Paziente as pa on r.paziente = pa.id
+		join Stanza as sta on l.stanza = sta.id
+		join Settore as set on sta.settore = set.id
+		join Piano as pia on set.piano = pia.id
+		where pa.medico = m
+		order by pia.numero, set.numero asc

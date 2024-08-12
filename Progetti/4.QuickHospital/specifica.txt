@@ -1,0 +1,47 @@
+Specifica dei tipo di dato:
+tipoaddr : {via: stringa, civico: int > 0}
+tipomail : stringa secondo regex...
+
+Specifica Classe Stanza:
+	Vincoli Esterni:
+1.	[V.Stanza.nonSaltareLetti]
+	ALL l,n Letto(l) AND numero(l,n) and n != 1 ->
+		EXIST l2,n2 Letto(l2) AND numero(l2,n2) AND n2 = n-1
+
+Specifica Classe Ricovero
+	Vicoli Esterni:
+1.	[V.Ricovero.nonInrecciareDate]
+		ALL r1,r2,i1,i2,f1,f2,u RicoveroTerminato AND dataInizio(r1,i1) AND dataFine(r1,f1) AND dataInizio(r2,i2) AND dataFine(r2,f2) AND pa_ri(u,r1) AND pa_ri(u,r2) ->
+			(i1<i2 AND f1<f2) OR (i2<i1 AND f2<f1)
+
+2.	[V.Ricovero.dataFineDopoInizio]
+		ALL r,i,f RicoveroTerminato(r) AND dataInizio(r,i) AND dataFine(r,f) ->
+			i < f
+
+3.	[V.Ricovero.dataFineprimaDiAdesso]
+		ALL r,d RicoveroTerminato(r) AND dataFine(r,d) -> 
+		ALL x date(now(),x) AND d < x
+
+Specifica Classe Persona:
+	Vincoli Esterni:
+1.	[V.persona.NonInCuraDaSeStesso]
+	ALL p Medico(p) -> NOT me_pa(p,p)
+
+2.	[V.persona.nascePrimaDiCompiereAzioni]
+	ALL p,n Persona(p) dataDiNascita(p,n)-> (NOT EXIST pr,d pa_pr(p,pr) and DataRichiesta(pr,d) and d<n)
+										     AND 
+										    (NOT EXIST pr2,d2 pa_ri(p,pr2) and DataInizio(pr2,d2) and d2<n)
+
+Specifica Classe Medico
+	Disponibile(): bool
+	preCondizioni:
+		nessuna
+	postCondizioni(): 
+		EXIST p Prestazione(p) and Confermata(p) and (pa_pr(.this,p) and ALL x Exist d date(now(), x) and dataRichiesta(p,d) and d = x ->
+			result = False
+		and
+		EXIST p Prestazione(p) and NOT RicoveroTerminato(p) (pa_ri(.this,p) and ALL x Exist d date(now(), x) and dataInizio(p,d) and d < x ->
+			result = False
+		and 
+		result = True
+

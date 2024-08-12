@@ -134,7 +134,7 @@ Triggers:
 
 -------------------
 Operazioni Use-case
-cercaVideoAvanzata(t: varchar[1..*], c: varchar, m: intgez)
+cercaVideoAvanzata(t: varchar[1..*], c: varchar, m: intgez) : varchar[0..*]
 	with Q as (select avg(val.voto) as media, v.nomeFileInDB as id
 			   from Video as v
 			   left outer join Valutazione as val.video = v.nomeFileInDB
@@ -147,7 +147,7 @@ cercaVideoAvanzata(t: varchar[1..*], c: varchar, m: intgez)
 		  where (v.censurato = 0 AND (Q.media >= m OR Q.media is NULL) AND v.categoria = c AND tv.tag IN t) 
 
 
-cercaPerCategoria(c: varchar)
+cercaPerCategoria(c: varchar): varchar[0..*]
 		Q = select (count(vr.risposta)) as conto, v.nomeFileinDB as id
 		    from Video as v
 		    join Video_vi.ri as vr on vr.video = v.nomeFileinDB

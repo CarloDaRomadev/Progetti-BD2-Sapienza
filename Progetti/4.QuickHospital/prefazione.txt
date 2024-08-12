@@ -1,0 +1,35 @@
+Cambio tipi di dato con tipi di dato compatibili con il dbms
+
+int -> intero
+
+int>0 -> create domain intgz as intero
+			check value > 0
+
+int>=0 -> create domain intgz as intero
+			check value >= 0
+
+bool -> boolean
+stringa -> varchar
+date -> date
+dataOra -> dateTime
+
+[1..8] -> create domain uno-otto as intero
+				check value >= 1 and value <= 8
+
+tipomail -> create type tipomail as (via: varchar, civico:intgz)
+tipoaddr -> create domain tipoaddr as varchar
+				check value is like ...
+
+nuovi vincoli esterni:
+#nuovi
+1.	[V.Specializzazione.Se_primaria_non_è_secondaria]
+	ALL s,m primaria(m,s) -> NOT secondaria(m,s)
+
+2.	[V.Specializzazione.Se_secondaria_non_è_primaria]
+	ALL s,m secondaria(m,s) -> NOT primaria(m,s)
+
+3.	[V.Ricovero.dataFine_e_le_ri_se_solo_se_terminato]
+	ALL r,t,d terminata(r,t) and t=True <-> EXIST d,l dataFine(r,d) and le_ri(l,r)
+
+4.  [V.Ricovero.le_ri_c_seSoloSeNonTerminato]
+	ALL r,t,d terminata(r,t) and t=False <-> EXIST l le_ri_c(l,r)
