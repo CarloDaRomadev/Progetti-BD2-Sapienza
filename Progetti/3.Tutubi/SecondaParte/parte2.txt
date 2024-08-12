@@ -1,3 +1,6 @@
+
+
+-------------------
 Funzioni:
 
 1. create function as durata(v: varchar): TipoDurata
@@ -14,6 +17,8 @@ Funzioni:
 
 	result = Q
 
+
+-------------------
 Triggers:
 1.	[T.videoRisposta.Utente_non_si_risponde_da_solo]
 	il trigger scatta all'aggiunzione di un nuovo video con attributo VideoRisposta = TRUE
@@ -31,23 +36,18 @@ Triggers:
 
 2.  [T.Utente_deve_visualizzare_per_commentare_e/o_valutare]
 	il trigger scatta all'aggiunzione di un nuovo commento/valutazione
-	Q = select u.nome
-		from Video as v
-		join Visualizzazione as vis on vis.video = v.nomeFinDB 
-		join UtenteRegistrato as u on u.nome = vis.utente 
-
-	C = select u.nome
-		from Video as v
-		join Commento as c on c.video = v.nomeFinDB 
-		join UtenteRegistrato as u on u.nome = c.utente 
-
-	S = select u.nome
-		from Video as v
-		join Valutazione as val on val.video = v.nomeFinDB 
-		join UtenteRegistrato as u on u.nome = val.utente 
-
-	if C in Q AND S in Q{			// con "in" intendo contenuto.
-		continue
+	is valid = not Exist(select distinct u.nome
+						 from UtenteRegistrato as u
+						 left outer join commento as c on u.nome = c.utente
+						 left outer join valutazione as v on u.nome = v.utente
+						 join Video on Video.nomeFileInDB = c.video AND Video.nomeFileInDB = v.video
+					     where u.nome not in (select distinct u2.nome
+					 						  from UtenteRegistrato as u2
+					 						  join Visualizzazione as vis on vis.utente = u2.nome
+					 						  join Video as v2 on vis.video = v2.nomeFileInDB
+					 						  where v2.nomeFileInDB = Video.nomeFileInDB))
+	if is valid{
+		contunue
 	}
 	else{
 		rollback
@@ -106,8 +106,8 @@ Triggers:
 	il trigger scatta quando un video viene caricato
 	is valid = not exist (select * 
 						  from video as v
-						  where v.censura = TRUE and v.Motivazione = NULL OR
-						  		v.censura = FALSE and v.Motivazione != NULL)
+						  where v.censura = TRUE and v.Motivazione is NULL OR
+						  		v.censura = FALSE and v.Motivazione is not NULL)
 	if is valid == TRUE{
 		continue
 	}
@@ -123,7 +123,7 @@ Triggers:
 						  left outer join vi_vi.ri as vr on vr.risposta = v.nomeFinDB
 						  where v.videoRisposta == TRUE and vr.video = NULL
 						  OR
-						  v.videoRisposta == FALSE and vr.video != NULL)
+						  v.videoRisposta == FALSE and vr.video is not NULL)
 
 	if is valid == TRUE{
 		continue
@@ -132,4 +132,33 @@ Triggers:
 		rollback
 	}
 
-Use-case
+-------------------
+Operazioni Use-case
+cercaVideoAvanzata(t: varchar[1..*], c: varchar, m: intgez)
+	with Q as (select avg(val.voto) as media, v.nomeFileInDB as id
+			   from Video as v
+			   left outer join Valutazione as val.video = v.nomeFileInDB
+			   group by val.video)
+
+	res = select v.nomeFileInDB
+		  from Video as v
+		  join Q on v.nomeFileInDB = Q.id
+		  join Tag-Video as tv on tv.video = v.nomeFileInDB
+		  where (v.censurato = 0 AND (Q.media >= m OR Q.media is NULL) AND v.categoria = c AND tv.tag IN t) 
+
+
+cercaPerCategoria(c: varchar)
+		Q = select (count(vr.risposta)) as conto, v.nomeFileinDB as id
+		    from Video as v
+		    join Video_vi.ri as vr on vr.video = v.nomeFileinDB
+		    where v.categoria = c
+		    group by vr.video
+		
+	result = select id 
+			 from Q 
+			 where Q.conto = select (max(conto) from Q)	   
+
+
+
+
+
