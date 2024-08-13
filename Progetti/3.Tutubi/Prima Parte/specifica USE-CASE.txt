@@ -34,8 +34,6 @@ cercaVideoPerTitolo(s: Stringa): Video[0..*]
 		V = {votinx | EXIST u valutazione(u,v) AND voto(u,v,votinx)}
 		V not empty ->
 			result = (sommmatoria su V) / |V|
-		AND
-			result = Null
 
 2.	cercaPerCategoria(c: Categoria)
 	preCondizioni:

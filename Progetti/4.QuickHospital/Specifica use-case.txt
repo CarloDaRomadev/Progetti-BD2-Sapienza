@@ -42,8 +42,8 @@ useCase StrumentiPrestazione:
 	preCondizioni:
 		ALL d Exist m Medico(m) and generale(m,s) and disponibile(m,d) and d = TRUE
 	postCondizioni:
-		Prim = {m | ALL d Medico(m) and generale(m,s) and primaria(m,s) and disponibile(m,d) and d = TRUE}
-		Seco = {m | ALL d Medico(m) and generale(m,s) and disponibile(m,d) and d = TRUE}
+		Prim = {m | EXIST d Medico(m) and generale(m,s) and primaria(m,s) and disponibile(m,d) and d = TRUE}
+		Seco = {m | EXIST d Medico(m) and generale(m,s) and disponibile(m,d) and d = TRUE}
 	Prim = insieme vuoto -> result = Seco
 	and 
 	result = Prim

@@ -22,7 +22,7 @@ specifica Classe Rapperesentazione:
 	preCodizioni:
 		nessuna
 	postCondizioni:
-		d | ALL s ra_sp(.this,s) AND durata(s,d)
+		d | EXIST s ra_sp(.this,s) AND durata(s,d)
 		o | oraI(.this,o)
 	result o + d 
 
@@ -41,4 +41,3 @@ specifica Classe Prenotazione:
 		time(p,dt) AND Date(dt,d) AND Time(dt,t) AND pr_ra(p,r) AND giorno(r,g) AND oraI(r,i) ->
 			(g > d) OR (g = d AND i > t)
 
-			

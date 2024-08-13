@@ -20,8 +20,7 @@ specifica classe AstaConclusa
 			Exist b Bid(b) and as_bid(.this, bid)
 		postCondizioni
 			result = bid_max | Bid(bid_max) AND as_bid(.this,bid_max) AND 
-			ALL t1,t2 
-				NOT EXIST b2 Bid(b2) AND as_bid(.this, b2) AND time(bid_max, t1) AND time(b2, t2) AND t1 < t2
+				NOT EXIST b2,t1,t2 Bid(b2) AND as_bid(.this, b2) AND time(bid_max, t1) AND time(b2, t2) AND t1 < t2
 
 
 		prezzoFinale(): float >= 0

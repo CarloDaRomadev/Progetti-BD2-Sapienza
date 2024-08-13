@@ -1,3 +1,31 @@
-use-case Iscrizione
-	iscriviti(nome: strigna, cognome: stringa, cf: TipoCf)
-	
+use-case Iscrizione:
+	iscriviti(nome: strigna, cognome: stringa, cf: TipoCf): Utente
+
+use-case Prenotazione:
+	Prenota(r: Rapperesentazione, s: Settore, n: int, t: TipoTariffa): Prenotazione
+	preCondizioni:
+		|{p1 |po_se(p1,s)}| >= sommatoria su{n| ALL p2 pr_se(p2,s) AND pr_ra(p2,r)} + n
+		AND
+		ALL sa sa_set(sa,s) -> sa_ra(sa,r)
+	postCondizioni:
+		nuovi elementi:
+			Prenotazione(alpha)
+		nuove tuple:	
+			pr_se(alpha,s)
+			numeroPosti(alpha,n)
+			time(alpha,now())
+			pr_ra(alpha,r)
+			tariffa(alpha,t)
+
+use-case Navigazione:
+ricerca(g: date, t: Tipologia, g: Genere)
+
+use-case Pubblicità
+	invia(u: Utente): Rappresentazione[1..*]
+	preCondizioni:
+		g | ALL p,dt,r,s cl_pr(u,p) AND pr_ra(p,r) AND ra_sp(r,s) AND ge_sp(g,s) AND time(p,dt) AND ALL dt2 NOT EXIST p2 cl_pr(u,p2) AND time(p2,dt2) AND dt > dt2 
+		(Exist p cl_pr(u,p))
+		AND
+	    (Exist s2 sp_ge(s2,g))
+	postCondizioni:
+
