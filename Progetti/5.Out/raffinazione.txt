@@ -1,0 +1,27 @@
+Sede
+	nome
+	indirizzo
+	sale
+
+Sala
+	settori
+
+Posto
+	numeroFila
+	numeroColonna
+
+Spettacolo 
+	titolo
+	tipologia
+	genere
+	artisti
+
+Rappresentazione
+	spettacolo
+	data
+	sede
+	orario
+
+Prenotazione
+
+Utente

@@ -1,0 +1,44 @@
+specifica dei tipi di dato:
+	TipoAddr : {via: stringa, civico: int > 0}
+	TipoCf : stringa secondo regex
+	TipoDurata : {ore: int > 0, minuti: 0..59, secondi: 0..59}
+	TipoTariffa : {intero, ridotto}
+
+specifica Classe Sala:
+	vincoli esterni:
+1.	[V.sala.non_ci_sono_Spettacoli_intrecciati]
+	ALL s,r1,r2,g,g2,i1,i2,f1,f2 
+		sa_ra(s,r1) AND sa_ra(s,r2) AND giorno(r1,g) AND giorno(r2,g) AND oraI(r1,i1) AND oraI(r2,i2) AND oraF(r1,f1) AND oraF(r2,f2) ->
+			((i1<i2 AND f1<f2) OR (i2<i1 AND f1<f2))
+
+specifica Classe Rapperesentazione:
+	vincoli esterni:
+1.	[V.rappresentazione.orai<oraf]
+	ALL r,i,f Rapperesentazione(r) AND oraI(r,i) AND oraF(r,f) ->
+		i<f
+
+	operazioni:
+	oraF(): ora
+	preCodizioni:
+		nessuna
+	postCondizioni:
+		d | ALL s ra_sp(.this,s) AND durata(s,d)
+		o | oraI(.this,o)
+	result o + d 
+
+specifica Classe Prenotazione:
+	vincoli esterni:
+1.	[V.Prenotazine.coerenzaSettore]
+	ALL p,s,r Prenotazione(p) AND pr_se(p,s) AND pr_ra(p,r) ->
+		EXIST sa sa_set(sa,s) AND sa_ra(sa,r)
+
+2.  [V.Prenotazione.PostiPrenotati<=PostiEsistenti]
+	ALL s,r Settore(s) AND Rappresentazione(r) -> 
+		(sommatoria su{n| ALL p pr_se(p,s) AND pr_ra(p,r) AND numeroPost(p,n)}) <= |{po | po_se(po,s)}|
+
+3.  [V.Prenotazione.PrimaDiRappresentazione]
+	ALL p,dt,d,t,g,i,r
+		time(p,dt) AND Date(dt,d) AND Time(dt,t) AND pr_ra(p,r) AND giorno(r,g) AND oraI(r,i) ->
+			(g > d) OR (g = d AND i > t)
+
+			
