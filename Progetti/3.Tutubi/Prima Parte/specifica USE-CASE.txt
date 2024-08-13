@@ -19,8 +19,7 @@ cercaVideoPerTitolo(s: Stringa): Video[0..*]
 	postCondizioni:
 		V = {v Video(v) | EXIST tag 
 								ca_vi(c,v) AND ta_vi(tag,v) AND tag in t AND 
-						  ALL votinx 
-		                        ValutazioneMedia(v,votinx) AND (votinx >= voto or votinx = Null)
+		                        (EXIST votinx ValutazioneMedia(v,votinx) AND (votinx >= voto)) OR (NOT EXIST votinx ValutazioneMedia(v,votinx))
 		                  AND NOT VideoCensurato(v)}
 		    }		
 		//considero t come se fosse un set
@@ -39,11 +38,11 @@ cercaVideoPerTitolo(s: Stringa): Video[0..*]
 	preCondizioni:
 		nessuna
 	postCondizioni:
-		V = {v | EXIST vri 
+		V = {v | EXIST vri, n
 			ca_vi(c,v) AND vi_vi.ri(v,vri) AND 
-		 ALL n numeroVideoRisposta(v,n) 
-		 NOT EXIST v2,n2 ca_vi(c,v2) AND NumeroVideoRisposta(v2,n2) AND n2 > n}
-		 result = V
+		 	numeroVideoRisposta(v,n) AND
+			NOT EXIST v2,n2 ca_vi(c,v2) AND NumeroVideoRisposta(v2,n2) AND n2 > n}
+			result = V
 
 2.1 #ausiliaria
 	numeroVideoRisposta(v: Video): int >= 0

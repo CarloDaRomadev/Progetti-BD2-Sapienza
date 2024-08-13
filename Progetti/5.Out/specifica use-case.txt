@@ -23,9 +23,10 @@ ricerca(g: date, t: Tipologia, g: Genere)
 use-case Pubblicità
 	invia(u: Utente): Rappresentazione[1..*]
 	preCondizioni:
-		g | ALL p,dt,r,s cl_pr(u,p) AND pr_ra(p,r) AND ra_sp(r,s) AND ge_sp(g,s) AND time(p,dt) AND ALL dt2 NOT EXIST p2 cl_pr(u,p2) AND time(p2,dt2) AND dt > dt2 
+		g | EXIST p,dt,r,s cl_pr(u,p) AND pr_ra(p,r) AND ra_sp(r,s) AND ge_sp(g,s) AND time(p,dt) AND NOT EXIST p2,dt2 cl_pr(u,p2) AND time(p2,dt2) AND dt > dt2 
 		(Exist p cl_pr(u,p))
 		AND
 	    (Exist s2 sp_ge(s2,g))
 	postCondizioni:
+		
 

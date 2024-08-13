@@ -6,10 +6,14 @@ tipoFile = {file binario}
 specifica classe Video:
 	operzioni:
 1.	durata(): tipoDurata
+		pre: nessuna
+		post:
 		x | EXIST f file(.this,f) AND durata(f,x) //assumiamo che esista un metodo durata per estrapolare la durata di un video 
 		res = x
 
 2.	views(): int>=0
+	    pre: nessuna
+		post:
 		V = {vis | vid_vis(.this, vis)}
 		result = |V|
 

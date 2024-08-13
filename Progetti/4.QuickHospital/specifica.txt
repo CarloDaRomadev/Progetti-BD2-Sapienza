@@ -28,7 +28,7 @@ Specifica Classe Persona:
 	ALL p Medico(p) -> NOT me_pa(p,p)
 
 2.	[V.persona.nascePrimaDiCompiereAzioni]
-	ALL p,n Persona(p) dataDiNascita(p,n)-> (NOT EXIST pr,d pa_pr(p,pr) and DataRichiesta(pr,d) and d<n)
+	ALL p,n Persona(p) dataDiNascita(p,n) -> (NOT EXIST pr,d pa_pr(p,pr) and DataRichiesta(pr,d) and d<n)
 										     AND 
 										    (NOT EXIST pr2,d2 pa_ri(p,pr2) and DataInizio(pr2,d2) and d2<n)
 
@@ -40,7 +40,7 @@ Specifica Classe Medico
 		EXIST p Prestazione(p) and Confermata(p) and (pa_pr(.this,p) and ALL x Exist d date(now(), x) and dataRichiesta(p,d) and d = x ->
 			result = False
 		and
-		EXIST p Prestazione(p) and NOT RicoveroTerminato(p) (pa_ri(.this,p) and ALL x Exist d date(now(), x) and dataInizio(p,d) and d < x ->
+		EXIST p Prestazione(p) and NOT RicoveroTerminato(p) and (pa_ri(.this,p) and ALL x Exist d date(now(), x) and dataInizio(p,d) and d < x ->
 			result = False
 		and 
 		result = True
