@@ -1,0 +1,32 @@
+utente
+	nome
+	cognome
+	sesso
+	età
+	cittàDiResidenza
+	distanzaPropriaAbitazioneDalCentro [0..1]
+	distanza da stazione [0..1]
+	numero familiari, adulti e bambini [0..1]
+	numero persone ospitabili
+	stanze con ralativi letto
+
+Stanza
+	nome
+	posti letto
+
+Posto letto
+	tipo Posto letto
+	numero posti posti
+
+periodi di non disponibilità
+	date/
+	periodi
+
+Prenotazione
+	date, 
+	persone, 
+	Postiletto,
+	accompagnatori
+
+Recenzione
+	voto

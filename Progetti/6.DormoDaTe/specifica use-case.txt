@@ -1,0 +1,47 @@
+use-case iscrizione:
+	iscriviti(nome: stringa, cognome: stringa, sesso: TipoSesso, dataDiNascita: date, c: Città): Utente
+
+use-case modifica profilo:
+	aggiungiDistanzaDalCentro(d: int >= 0)
+	aggiungiDistanzaDaStazionepiùVicina(s: Stazione, d:int >= 0): Stazione
+	aggiungiPersoneFAMIGGHIA(b: int >= 0, a: int >= 0)
+	aggiungiStanza(tipo: stringa): Stanza
+	aggiungiPostoLetto(s: Stanza, tipo: stringa, np: int > 0): PostoLetto
+
+use-case strumenti periodoND:
+	aggiungi(dataI:date,dataF:date): periodoNDù
+	
+use-case strumenti richieste:
+	creaRichiesta(u: Utente, P: postoLetto[1..*], ACC: Utente[0..*], i: date, f:date): Richista
+	preCondizioni:
+		o | ospitabili(u,o)
+		d | disponibile(u,i,f,d)
+
+		(ALL p in P Exist s po_st(p,s) AND ut_sta(u,s)) AND
+		(|ACC| + 1 ) <= o AND
+		(ALL ut in ACC ut != u) AND
+		(chiamante != u AND)
+		(chiamante not in ACC) AND
+		(ALL t prenota(chiamante,t) AND Terminata(t) EXIST v voto_ato(t,v)) AND
+		(d = TRUE)
+
+	postCondizioni:
+
+		nuovi elementi dominio:
+			Richiesta(alpha)
+		nuove tuple:
+			dataI(alpha,i)
+			dataF(alpha,f)
+			richiedonoa(u,r)
+			ALL c in ACC (c, r)
+			Prenota(chiamante, r)
+			ALL p in P po_ri(p,r)
+		result = alpha
+
+
+	accettaRichiesta(r:Richiesta): Accettata
+	rifiutaRichiesta(r:Richirsta, motivo: stringa): Rifiutata
+
+use-case recensione:
+	recensioneAnte(a: Accettata)
+	recensioneATO(a: Accettata)

@@ -122,7 +122,7 @@ operazioni:
 		res = select s.id
 			  from Spettacolo as s,Q
 			  join Rappresentazione as r on r.spettacolo = s.id
-			  where s.genere = Q.nome AND r.giorno <= now() + "1 settimana" AND r.giorno() >= now()
+			  where s.genere = Q.nome AND r.giorno <= now() + "1 settimana" AND r.giorno() > now()
 
 		if res is empty{
 			abort

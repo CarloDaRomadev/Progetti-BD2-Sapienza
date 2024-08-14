@@ -1,0 +1,48 @@
+specifica tipi di dato:
+	TipoSesso : enum{m,f}
+
+specifica Classe Utente
+	operazioni:
+	età(): int>=0
+	preCondizioni: 
+		nessuna
+	postCondizioni:
+		d | dataDiNascita(.this,d)
+		n | date(now(),n)
+		result = n - d
+
+-------------------
+
+	ospitabili(): int>0[0..1]
+	preCondizioni:
+		exist s Stanza AND ut_sta(.this,s)
+	postCondizioni:
+		P = {n | EXIST p,s po_st(p,s) AND ut_sta(.this,s) ANS numeroPosti(p,n)}
+		result = sommatoria su P
+
+-------------------
+
+	disponibile(dataI: date, dataF: date): bool
+	preCondizioni:
+		dataI >= dataF AND dataI >= now()
+	postCondizioni:
+		Not Exist p,i,f nd_ut(p,.this) AND dataI(p,i) AND dataF(p,f) AND 
+				((dataI <= i AND i <= dataF) OR (dataI <= f AND dataF >= f) OR (i >= dataI AND f <= dataF)) ->
+				result = True
+
+		AND
+
+		result = False
+
+specifica classe Richiesta:
+	vincoli esterni:
+
+1.	[V.Richiesta.coerenzaPostiLetto]
+	ALL r,p,u richiedonoa(u,r) AND po_ri(p,r) -> EXIST s po_st(p,s) AND ut_sta(u,s)
+
+2.	[V.Richiesta.nonVaADormireACasaSua]
+	ALL u,r ut_ri(u,r) -> NOT richiedonoa(u,r)
+
+secifica classe PeriodoND
+1.  [V.PeriodoND.dataI<=dataF]
+	ALL p,i,f dataI(p,i) AND dataF(p,f) -> i <= f
