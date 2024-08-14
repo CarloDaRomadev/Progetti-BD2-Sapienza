@@ -1,0 +1,134 @@
+Triggers
+
+1. [T.nonIntrecciareSpettacoli]
+	scatta all'inserimento di una nuova Rappresentazione
+	isValid = notExist(select *
+					   from Rappresentazione as r, rappresentazione as r2, sala as s
+					   where r.sala = s.id and r2.sala = s.id and r.giorno = r2.giorno and
+					   		r.oraI > r2.oraI and oraF(r.id) < oraF(r2.id))
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+2.	[T.costoI>costoR]
+	scatta all'inserimento di una nuova Rappresentazione
+	isValid = notExist(select *
+					   from Rappresentazione as r
+					   where costoI < costoR)
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+3.	[T.Prenotazione_coerenzaSettore]
+	scatta alla prenotazione
+	isValid = notExist(select *
+					   from Prenotazione as p
+					   where p.settore not in (select se.id
+					   						   from Prenotazione as p
+											   join Rappresentazione as r on p.rappresentazione = r.id
+											   join sala as s on s.nome = r.sala
+											   join settore as se on se.sala = s.id))
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+4.	[T.PostiPrenotati<=PostiEsistenti]
+	scatta alla prenotazione
+	Q = (with stat as (select count(p.id) as conto, s.id
+				  from Posto as p
+				  join settore as s on p.settore = s.id
+				  group by s.id)
+
+	select sum(pre.numeroPosti) as np, stat.conto as conto
+	from Prenotazione as pre
+	join Settore as se on pre.settore = se.id
+	join stat on stat.id = se.id 
+	group by se.id
+	having conto < np)
+
+	if Q is empty{
+		continue
+	}
+	else{
+		rollback
+	}
+
+5.	[T.prenotazionePrimaDiRappresentazione]
+	scatta alla prenotazione
+	isValid = notExist(select *
+					   from Prenotazione as p, Rappresentazione as r
+					   where ((date(p.time) > r.giorno) or (time(p.time) > r.ora and date(p.time) = r.giorno))
+
+	if Q is empty{
+		continue
+	}
+	else{
+		rollback
+	}
+
+6.	[T.posto.nonSaltareFila]
+	scatta all'aggiunzione di un posto
+	Q = select * 
+	from Posto as p1
+	where p1.numeroF > 1 and not exist (select *
+										from Post as p2 
+										where (p2.numeroF = p1.numeroF - 1) 
+										and (p1.settore = p2.settore)
+	if Q is empty{
+		continue
+	}
+	else{
+		rollback
+	}
+
+7.	[T.posto.nonSaltareColonna]
+	scatta all'aggiunzione di un posto
+	Q = select * 
+	from Posto as p1
+	where p1.numeroC > 1 and not exist (select *
+										from Post as p2 
+										where (p2.numeroC = p1.numeroC - 1) 
+										and (p1.settore = p2.settore)
+	if Q is empty{
+		continue
+	}
+	else{
+		rollback
+	}
+
+operazioni:
+	Prenotazione(u:intgz,r:intgz,s:intgz,n:intgz,t:TipoTariffa): intgz
+		inset into Prenotazione(u,now(),n,t,nextid,r,s)
+
+	Pubblicità(p: TipoCf): <intgz>
+		with Q as (select max(p.time), g.nome as nome
+			from Prenotazione as p
+			join Persona as pe join pe.CodiceFiscale = p.utente
+			join Rappresentazione as r on p.rappresentazione = r.id
+			join Spettacolo as s on r.spettacolo = s.id
+			join Genere as g on g.id = r.genere)
+
+		res = select s.id
+			  from Spettacolo as s,Q
+			  join Rappresentazione as r on r.spettacolo = s.id
+			  where s.genere = Q.nome AND r.giorno <= now() + "1 settimana" AND r.giorno() >= now()
+
+		if res is empty{
+			abort
+		}
+		else{
+			result = res
+		}
+
+		

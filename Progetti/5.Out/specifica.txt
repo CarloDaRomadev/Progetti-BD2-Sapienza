@@ -17,6 +17,10 @@ specifica Classe Rapperesentazione:
 	ALL r,i,f Rapperesentazione(r) AND oraI(r,i) AND oraF(r,f) ->
 		i<f
 
+2. 	[V.rappresentazione.costoI>costoR]
+	ALL r,int,rid costI(r,int) AND costoR(r,rid) -> 
+		inr > rid
+
 	operazioni:
 	oraF(): ora
 	preCodizioni:
@@ -41,3 +45,10 @@ specifica Classe Prenotazione:
 		time(p,dt) AND Date(dt,d) AND Time(dt,t) AND pr_ra(p,r) AND giorno(r,g) AND oraI(r,i) ->
 			(g > d) OR (g = d AND i > t)
 
+specifica Classe Posto:
+
+1.	[V.Posto.nonsaltareFila]
+	ALL p,f Posto(p) AND numeroFila(p,f) AND f > 1 -> Exist p2,f2 numeroFila(p2,f2) AND f2 = f - 1
+
+2.  [V.Posto.nonsaltareColonna]
+	ALL p,f Posto(p) AND numeroColonna(p,f) AND f > 1 -> Exist p2,f2 numeroColonna(p2,f2) AND f2 = f - 1

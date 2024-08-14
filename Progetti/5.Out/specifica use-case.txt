@@ -8,7 +8,7 @@ use-case Prenotazione:
 		AND
 		ALL sa sa_set(sa,s) -> sa_ra(sa,r)
 	postCondizioni:
-		nuovi elementi:
+		nuovi elementi dominio:
 			Prenotazione(alpha)
 		nuove tuple:	
 			pr_se(alpha,s)
@@ -24,9 +24,11 @@ use-case Pubblicità
 	invia(u: Utente): Rappresentazione[1..*]
 	preCondizioni:
 		g | EXIST p,dt,r,s cl_pr(u,p) AND pr_ra(p,r) AND ra_sp(r,s) AND ge_sp(g,s) AND time(p,dt) AND NOT EXIST p2,dt2 cl_pr(u,p2) AND time(p2,dt2) AND dt > dt2 
+
 		(Exist p cl_pr(u,p))
 		AND
-	    (Exist s2 sp_ge(s2,g))
+	    (Exist s2,gio,r,a ge_sp(g,s2) AND ra_sp(r,s2) AND giorno(r,gio)AND date(now(),a) AND gio <= a + "1 settimana" AND gio > a)
 	postCondizioni:
-		
-
+		g | EXIST p,dt,r,s cl_pr(u,p) AND pr_ra(p,r) AND ra_sp(r,s) AND ge_sp(g,s) AND time(p,dt) AND NOT EXIST p2,dt2 cl_pr(u,p2) AND time(p2,dt2) AND dt > dt2 
+		R = {r | EXIST s,gio,a ge_sp(g,s) AND ra_sp(r,s) AND giorno(r,gio) AND date(now(),a) AND gio <= a + "1 settimana" AND gio > a}
+		result = R

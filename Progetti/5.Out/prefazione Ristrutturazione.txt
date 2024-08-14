@@ -1,0 +1,39 @@
+cambio dei tipi di dato per adattarli al dbms
+
+stringa -> varchar
+data -> date
+ora -> time
+dataOra -> datetime
+int -> integer
+
+int>0 -> create domain intgz as integer
+			check value > 0
+
+float -> Reale
+
+float>= -> create domain realegz as reale
+			 check value > 0
+
+TipoCf -> create domain TipoCf as varchar
+			check value is like %...
+
+0..59 -> create domain ztcn as integer
+			check value >= 0 and value <= 59
+
+TipoDurata -> create domain TipoDurata as (ore: intgz, minuti: ztcn, secondi: ztcn)
+
+TipoTariffa -> create domain TipoTariffa as enum(intero,ridotto)
+
+TipoAddr -> create domain TipoAddr as (via: varchar, civico: intgz)
+
+nuovi vincoli esterni:
+	nessuno (godo come un cane)
+
+funzioni
+	
+oraF(r): time
+	Q = select rap.oraI as oraI, s.durata as Durata
+		from Rappresentazione as rap
+		join Spettacolo as s on rap.spettacolo = s.id 
+		where rap.id = r
+	res =  Q.oraI + Q.durata
