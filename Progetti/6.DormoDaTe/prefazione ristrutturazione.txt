@@ -1,0 +1,60 @@
+Tipo sesso -> create type tiposesso as enum (m,f)
+stringa -> varchar
+int -> integer
+int > 0 -> create domain as intgz as integer 
+				check value > 0
+
+int >= 0 -> create domain as intgez as integer
+				check value >= 0
+
+float -> reale
+float > 0 -> create domain as realegz as reale
+				check value > 0
+
+float >= 0 -> create domain as realegez as reale
+				check value >= 0
+
+date -> date
+time -> time
+dateTime -> dateTime
+0..5 -> create domain as ztc as integer
+			check value >= 0 and value <= 5
+
+bool -> boolean
+tipoR -> create type tipoR as enum (accettata, rifiutata)
+
+#nuovi vincoli esterni:
+1.	[V.Richiesta.voto_ante_voto_ato_solo_se_terminato]
+	ALL r,t terminata(r,t) AND t = False -> NOT EXIST r1,r2 voto_ante(r,r1) and voto_ato(r,r2)
+
+2.	[V.Richiesta.Terminato.solose_accettata]
+	ALL r,t terminata(r,t) AND t = True -> r,ti tipo(r,ti) and ti = "accettata"
+
+3.	[V.Richiesta.motivazione_sesolose_terminata]
+	ALL r,t terminata(r,t) AND t = True <-> EXIST m motivazione(r,m)
+
+#ristrutturazione delle operazioni di classe:
+	età(n: varchar): intgz
+	Q = select u.dataDiNascita
+		from Utente as u
+		where u.nome = n
+
+	result = now() - Q.dataDiNascita
+
+	ospitabili(n: varchar): intgz[0..1]
+	Q = select sum(p.numeroPosti) as somma
+		from Utente as u
+		join Stanza as s on s.utente = u.id
+		join PostoLetto as p on p.stanza = s.id
+		where u.nome = n
+		group by u.id
+
+	result = Q.somma
+
+	disponibile(n: varchar, dataI: date, dataF: date): boolean
+	Q = not exist (select *
+				   from Utente as u
+				   join PeriodoND as p on u.id = p.utente
+				   where (p.dataI > dataI and p.dataI < dataF) or
+				   	     (p.dataF > dataI and p.dataF < dataF) or
+				   	     (p.dataI < dataI < dataF < p.dataF)

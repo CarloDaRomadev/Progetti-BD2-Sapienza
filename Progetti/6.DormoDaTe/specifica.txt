@@ -43,6 +43,19 @@ specifica classe Richiesta:
 2.	[V.Richiesta.nonVaADormireACasaSua]
 	ALL u,r ut_ri(u,r) -> NOT richiedonoa(u,r)
 
-secifica classe PeriodoND
+3. 	[V.Richiesta.datai<dataf]
+	ALL r,i,f dataI(r,i) and dataF(r,f) -> i<=f
+
+specifica classe PeriodoND
 1.  [V.PeriodoND.dataI<=dataF]
 	ALL p,i,f dataI(p,i) AND dataF(p,f) -> i <= f
+
+2.	[V.PeriodoND.nonIntersecare]
+	ALL p,i,f,p2,i2,f2 dataI(p,i) and dataI(p2,i2) and dataF(p,f) and dataF(p2,f2) and PeriodoND(p) and PeriodoND(p2) ->
+		i<i2 or f>f2 
+
+specifica classe Utente
+
+1.  [V.Utente.nasce_poi_fa_altro]
+	ALL u,d dataDiNascita(u,d) -> 
+		(NOT EXIST r,di Richiesta(r) and dataI(r,di) and di<d) AND (NOT EXIST p,di2 dataI(p,di2) and PeriodoND(p) and di2 < d)
