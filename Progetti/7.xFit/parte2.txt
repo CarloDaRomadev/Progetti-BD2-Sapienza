@@ -1,0 +1,237 @@
+cambio dei tipi di dato:
+
+int -> integer
+int>0 -> create domain intgz as integer
+	check value > 0 
+int>=0 -> create domain intgez as integer
+	check value >= 0
+float -> reale
+float>0 -> create domain realegz as reale
+	check value > 0
+float>=0 -> create domain realegez as reale 
+	check value >= 0
+stringa -> varchar
+date -> date
+dateTime -> dateTime
+time -> time
+tipoDurata -> create type tipoDurata as(mesi: intgez, giorni: intgez)
+bool -> boolean
+tipoArea -> create domain TipoArea as enum('AreaComune', 'AreaNC')
+tipoContratto -> create domain tipoContratto as enum('Determinato', 'Indeterminato')
+tipoPersonale -> create domain tipoPersonale as enum('PersonaleA', 'Istruttore')
+tipoGiorno -> create domain tipoGiorno as enum('lun'...'dom')
+
+------------------------
+
+vincoli esterni aggiuntivi/modificati:
+	[V.Contratto.FineSeSoloSe.determinato] #aggiunto
+	ALL c,t Contratto(c) and tipo(c,t) and t = determinato <-> EXIST d dataFine(c,d) 
+
+	[V.Area.nonHaAttivitàSeèComune] #aggiunto
+	ALL a,t Area(a) and tipo(a,t) and t = 'AreaComune' -> NOT EXIST s ar_at(a,s) 
+
+	[V.Istruttore.ha_contratto_determinato]	#modificato
+	ALL p,t,c,t2 Personale(p) and tipo(p,t) and t='Istruttore' and co_pe(c,p) and tipo(c,t2) -> t2 = 'Determinato' 
+
+	[V.Persona.complete,disjoint] #aggiunto
+	NOT EXIST p,c,pe isac(p,c) and isap(p,pe) AND 
+	NOT EXIST p2,c2,pe2 NOT isac(p2,c2) AND NOT isap(p2,pe2)
+
+------------------------
+
+operazioni di classe andate perse con la ristrutturazione:
+
+scadenza(a: intgz): date
+	Q = select abb.date,o.durata
+	from Abbonamento as abb
+	join Offerta as o on abb.offerta = o.id
+	where abb.id = a
+
+	result = Q.date + Q.durata
+	
+areeAccessibili(a: intgz): varchar[1..*]
+	Q = select att.area
+		from Abbonamento as abb
+		join Offerta as o on a.offerta = o.id
+		join at_of on o.id = at_of.offerta
+		join AttivitàSportiva as att on at_of.attivitàSportiva = att.nome
+		where abb.id = a
+
+	result = Q
+
+attività(v: intgz): varchar[0..*]
+	Q = select att.nome
+		from AttivitàSportiva as att
+		join Area as a on att.area = area.nome
+		join ar_va on a.nome = ar_va.area
+		join varco as va on ar_va.varco = va.id
+		where va.id = v
+
+	result = Q 
+
+------------------------
+
+triggers:
+	[t.Contratto.FineSeSoloSe.determinato] 
+	...inserimento o modifica contratto...
+	isValid = notExist(select *
+					   from Contratto as c
+					   where c.tipo = 'determinato' and fine = null or
+					   		 c.tipo = 'indeterminato' and fine != null)
+    if isValid{
+    	continue
+    }
+    else{
+    	rollback
+    }
+
+	[t.Area.nonHaAttivitàSeèComune]
+	...inserimento o modifica attività sportiva...
+	isValid = notExist(select *
+					   from Area as a
+					   join attivitàSportiva as att on att.area = a.nome
+					   where a.tipo = 'areaComune')
+    if isValid{
+		continue
+    }
+    else{
+    	rollback
+    }
+
+	[t.Istruttore.ha_contratto_determinato]
+	...inserimento personale...
+	isValid = notExist(select * 
+					   from Personale as p
+					   join Contratto as c on c.personale = p.id
+					   where contratto.tipo = 'indeterminato')
+
+    if isValid{
+		continue
+    }
+    else{
+    	rollback
+    }
+
+	[t.accesso.coerenza_varco_area]
+	...inserimento accesso...
+	isValid = notExist(select *
+					   from Accesso as a
+					   join Varco as v on a.varco = v.id
+					   join Area as ar on ar.nome = a.area
+					   where a.nome not in (select a2.nome
+					   						from area as a2
+					   						join ar_va on a2.nome = ar_va.area
+					   						where ar_va.varco = v.id))
+
+    if isValid{
+		continue
+    }
+    else{
+    	rollback
+    }
+
+	[t.abbonamento_sottoscritto_prima_di_fine_promo_and_dopo_inizio_promo]
+	...inserimento abbonamento...
+	isValid = notExist(select *
+					   from Abbonamento as a
+					   join Offerta as o on o.id = a.offerta
+					   where a.time > o.dataFine or a.time < o.datainizio)
+    if isValid{
+		continue
+    }
+    else{
+    	rollback
+    }
+
+	[t.Abbonamento.time<scadenza]
+	...inserimento abbonamento...
+	isValid = notExist(select *
+				   from Abbonamento as a
+				   join Offerta as o on o.id = a.offerta
+				   where a.time > scadenza(a.id)
+    if isValid{
+		continue
+    }
+    else{
+    	rollback
+    }
+
+	[t.Persona.nasce_poi_fa_altro]
+	...inserimento in persona...
+	isValid = notExist(select *
+					   from Persona as p
+					   left outer join Cliente as c on cliente.persona = p.id
+					   left outer join Personale as pe on Personale.persona = p.id
+					   left outer join Contratto as co on co.personale = pe.id
+					   left outer join Abbonamento as abb on abb.cliente = c.id
+					   where p.dataDiNascita < a.time or p.dataDiNascita < c.dataInizio)
+    if isValid{
+		continue
+    }
+    else{
+    	rollback
+    }
+
+	[t.Non_esistono_due_fasce_che_si_intersecano_su_una_area]
+	...iserimento in FasciaOraria...
+	isvalid = notExist(select * 
+					   from fasciaOraria as f1, fasciaOraria as f2
+					   join attivitàSportiva as s1 on f1.attivitàsportiva = s1.nome
+					   join attivitàSportiva as s2 on f2.attivitàsportiva = s2.nome
+					   join area as a on s1.area = a.nome and s2.area = a.nome
+					   where f1.giorno = f2.giorno and not (f1.orai > f2.oraf or f2.orai > f1.oraf)
+
+    if isValid{
+		continue
+    }
+    else{
+    	rollback
+    }
+
+	[t.Persona.complete,disjoint]
+	...inserimento in persona...
+	isvalid = notExist(select * 
+					   from Persona as p 
+					   left outer join personale as pe on pe.persona = p.id
+					   left outer join cliente as c on c.persona = p.id
+					   where (c.id = pe.id) or (c.id = null and pe.id == null)
+
+    if isValid{
+		continue
+    }
+    else{
+    	rollback
+    }
+
+------------------------
+
+operazioni use-case:
+	aux1(orai: time, oraf:time): (intgez,intgez,intgez,varchar)[0..*]
+		RES = (with Q as (
+			select count(a.time) as conto, date(a.time) as date, ar.id as area
+			from accesso as a area as ar
+			where (orai < time(a.time) < oraf) and (now() + 1 mese < date(a.time) < now + 1 mese) and a.area = ar.id
+			group by (date(a.time)), ar.id
+			)
+
+		select max(Q.conto), min(Q.conto), avg(Q.conto), Q.area
+		from Q
+		group by Q.area )
+
+		result = RES
+
+
+
+	stats2(c: intgz)
+		Q = (with aux as (select count(acc.date) as conto, a.nome
+		from area as a
+		join accesso as acc on acc.area = a.nome
+		where a.cliente = c and (now() - 1 mese < acc.time < now() + 1 mese)
+		group by a.nome)
+
+		select aux.conto, aux.nome
+		from aux
+		order by aux.conto disc)
+
+	result = Q
+

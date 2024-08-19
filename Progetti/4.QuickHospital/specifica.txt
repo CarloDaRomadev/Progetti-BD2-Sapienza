@@ -44,4 +44,3 @@ Specifica Classe Medico
 			result = False
 		and 
 		result = True
-

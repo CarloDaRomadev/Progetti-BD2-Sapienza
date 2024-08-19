@@ -20,7 +20,8 @@ use-case strumenti richieste:
 		(ALL p in P Exist s po_st(p,s) AND ut_sta(u,s)) AND
 		(|ACC| + 1 ) <= o AND
 		(ALL ut in ACC ut != u) AND
-		(chiamante != u AND)
+		(chiamante != u AND) AND
+		NOT EXIST p,di,df PeriodoND(p) AND dataI(p,di) AND dataF(p,df) AND ((di <= i AND i <= df) OR (di <= f AND df >= f) OR (i >= di AND f <= df))
 		(chiamante not in ACC) AND
 		(ALL t prenota(chiamante,t) AND Terminata(t) EXIST v voto_ato(t,v)) AND
 		(d = TRUE)

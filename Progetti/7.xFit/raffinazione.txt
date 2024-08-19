@@ -1,0 +1,44 @@
+cliente
+	cognome
+	nome
+	dataDiNascita
+	insieme di abbonamenti (storico)
+
+personale
+	contratto
+
+contratto
+	det,ind
+	data inizio
+	data fine se det
+	livello contrattuale
+	ruolo
+
+	(tenere storico contratti)
+
+ruolo
+	mansioni
+
+istruttore
+	contratto a tempo determinato (peffò)
+	attività sportive che fa
+
+abbonamento
+	prezzo
+	durata
+	attività comprese
+	durata promo (date)
+
+area
+	nome
+	capienza
+
+attività sportive
+	aree fisiche
+	orari (giorno e intervallo orario)
+
+varco
+	in
+	out
+	area comune [0/1]
+

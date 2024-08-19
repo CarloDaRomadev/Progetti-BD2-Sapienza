@@ -1,0 +1,127 @@
+specifica tipi di dato:
+	TipoDurata: {mesi: int>=0, giorni: int>=0}
+	TipoGiorno: enum{'lun','mar','mer','gio','ven','sab','dom'}
+
+specifica Classe Offerta
+	vincoli Esterni:
+	[V.dataI<dataF]
+	ALL o,i,f Offerta(o) AND dataInizio(o,i) AND dataFine(o,f) -> i < f
+
+specifica Classe Personale:
+	vincoli Esterni:
+	[V.Istruttore.ha_contratto_determinato]
+	ALL i,c Istruttore(i) AND co_pe(c,i) -> Determinato(c)
+
+specifica Classe Contratto
+	vincoli Esterni
+	[V.Contratto.ha_fine_dopo_inizio]
+	ALL c,i,f dataInizio(c,i) AND dataFine(c,f) -> i < f
+
+specifica Classe FasciaOraria
+	vincoli Esterni
+	[V.FasciaOraria.oraI<oraf]
+	ALL f,in,fi FasciaOraria(f) AND oraI(f,in) AND oraF(f,fi) -> in<fi
+
+	[V.Non_esistono_due_fasce_che_si_intersecano_su_una_area]
+	ALL f1,f2,a1,a2,ar,g,oi1,oi2,of1,of2 
+		at_fa(a1,f1) AND at_fa(a2,f2) AND ar_at(ar,a1) AND ar_at(ar,a2) AND giorno(a1,g) 
+		AND giorno(a2,g) AND oraI(a1,oi1) and oraI(a2,oi2) and oraF(a1,of1) oraF(a2,of2) ->
+			oi1 > of2 or oi2 > of1
+
+specifica Classe Persona
+	vincoli Esterni
+	[V.Persona.nasce_poi_fa_altro]
+	ALL p,d Persona(p) dataDiNascita(p,d) -> ( (NOT EXIST c,di co_pe(c,p) AND dataInizio(c,di) AND di < d) AND
+											   (NOT EXIST a,t ab_cl(a,p) AND time(a,p,t) AND t < d) AND
+											   (NOT EXIST acc,ti ac_cl(acc,p) AND time(acc,ti) AND ti < d) )
+
+specifica Classe Abbonamento
+
+	operazioni
+	scadenza():date
+	preCondizioni:
+		nessuna
+	psotCondizioni:
+		d | EXIST o ab_of(.this,o) AND durata(o,d)
+		t | EXIST time(.this,t)
+		result = d + t
+
+	areeAccessibili(): Area[0..*]
+	preCondizioni: nessuna
+	postCondizioni: 
+		Ar = {ar | EXIST o,s ab_of(.this,o) AND at_of(s,o) AND ar_at(ar,s)}
+		A = {a | AreaComune(a)}
+		result = Ar	UNITO A
+
+	vincoli Esterni
+	[V.abbonamento_sottoscritto_prima_di_fine_promo]
+	ALL t,o,c,a,i,f ab_cl(a,c) AND time(a,c,t) AND Offerta(o) AND dataInizio(o,i) AND dataFine(o,f) -> i <= t <= f
+	
+	[V.Abbonamento.time<scadenza]
+	ALL a,s,t Abbonamento(a) AND time(a,t) AND scadenza(a,s) -> t<s
+
+specifica Classe Accesso
+	vincoli Esterni
+	[V.accesso.coerenza_varco_area]
+	ALL a,v,ar ac_va(a,v) and ac_ar(a,ar) ->
+		ar_va(ar,v)
+
+specifica Classe Varco
+	operazioni
+	attività(): AttivitàSportiva[0..*]
+	precondizioni: nessuna
+	postCondizioni: 
+		A = {a | EXIST ar ar_va(ar,.this) AND ar_at(ar,a)}
+
+------------------------
+
+Specifica use-case
+	use case registrazione:
+		registrazione(nome: stringa, cognome: stringa, dataDiNascita: date) : Cliente
+
+	use case AccessoArea:
+		Accedi(c: Cliente, a: Area, v: Varco): Accesso
+
+	use case Iscrivi:
+		CreaAbbonamento(c: Cliente, o: Offerta): Abbonamento
+
+	use case Stats:
+		stats1(orai: ora, oraf: ora): (Area, int>0,float>0,int>0)[1..*]
+		preCondizioni: orai < oraf
+		postCondizioni: A = {a,max,min,avg | Area(a) and LOCALstats1(a,orai,oraf,max,min,avg)}
+		result = A
+
+		LOCALstats1(a: Area, orai: ora, oraf: ora): (int>0,float>0,int>0)
+		preCondizioni: orai < oraf
+		postCondizioni: A = {i | (ALL d date(d) AND d> now()-1mese and d< now()+1mese) and pdaystats1(a,orai,oraf,d,i)}
+						MAX | MAX in A and NOT EXIST i2 and i2 in A and i2 > MAX
+						MIN | MIN in A and NOT EXIST i2 and i2 in A and i2 < MIN
+						AVG =  A/|A|
+						result = MAX,MIN,AVG
+
+		pdaystats1(a: Area, orai: ora, oraf: ora, d: date)
+			preCondizioni: orai < oraf
+			postCondizioni:
+			R = {acc | EXIST t,d,o ac_ar(acc,a) and time(acc,t) and ora(t,o) and date(t,d) and orai < o < oraf and date = d}
+			result = |R|
+
+-------------------
+
+		stats2(c: Cliente): (Area,int>0)[1..*]
+		preCondizioni: nessuna
+		postCondiozioni:
+			B = {b,i | ALL Area(b) and Localstats2(c,b,i)}
+			result = sort(B)
+
+		sort(a1: Area, i1: int >= 0, a2: Area, i2: int >= 0): Area,int>=0
+		i1 >= i2 -> result = a1
+		and result = a2
+
+		LOCALstats2(c: Cliente, a: Area)
+		preCondizioni: nessuna
+		postCondiozioni:
+			B = {b | Exist acc,t,d ac_cl(acc,c) and time(acc,t) and date(t,d) and ac_ar(acc,a)}
+			result = |B|
+
+	use case gestioneAbbonamenti
+		CreaOfferta(p: float >= 0, durata: TipoDurata, dataInizio: date, dataFine: date, att: AttivitàSportiva[1..*]): Offerta

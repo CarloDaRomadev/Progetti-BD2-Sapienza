@@ -1,3 +1,143 @@
 # triggers
 
-[T.]
+[T.Richiesta.coerenzaPostiLetto]
+scatta alla creazione di una richiesta
+isValid = not exist (select *
+					 from Richiesta as r
+					 join po_ri as p on p.richiesta = r.id
+					 join PostoLetto as po on po.id = p.postoLetto
+					 join Stanza as s on s.id = po.stanza
+					 where s.utente != r.richiedonoa)
+if isvalid{
+	continue
+}
+else{
+	rollback
+}
+
+[T.Richiesta.utente_non_dorme_a_casa_sua]
+scatta alla creazione di una richiesta
+isValid = not exist (select *
+					 from Richiesta as r
+					 join ut_ri on ut_ri.richiesta = r.id
+					 where (r.prenota = r.richiedonoa) or (ut_ri.utente = r.richiedonoa))
+if isvalid{
+	continue
+}
+else{
+	rollback
+}
+
+// non servono perché già esplicitati con i check.
+[T.Richiesta.datai<dataf]
+is valid = not exist (select *
+					  from Richiesta as r
+					  where r.dataI > r.dataF)
+if isvalid{
+	continue
+}
+else{
+	rollback
+}
+
+[T.Richiesta.datai<dataf]
+is valid = not exist (select *
+					  from PeriodoND as p
+					  where r.dataI > p.dataF)
+if isvalid{
+	continue
+}
+else{
+	rollback
+}
+//
+
+[T.PeriodoND.nonIntersecare]
+scatta all'inserimento di un nuovo peridoND
+is valid = not exist (Select * From periodoND as p1, periodoND as p2
+Where p1.dataI<p2.dataI and p1.dataF>p2.dataF)
+if isvalid{
+	continue
+}
+else{
+	rollback
+}
+
+[T.Utente.nasce_poiFaAltro]
+scatta all'inserimento di una nuovaRichiesta
+is valid = not exist (Select * From Richiesta as e
+Left join utente as u1 where r.prenota = u1.id
+Left outer join ut_ri on ut_ri.richiesta = r.id
+Left outer join utente as u2 where u2.id = ut_ri.utente
+where r.dataI < u1.dataDiNascita or r.dataI > u2.dataDiNascita)
+if isvalid{
+	continue
+}
+else{
+	rollback
+}
+
+[T.Richiesta.voto_ante_voto_ato_solo_se_terminato]
+scatta al cambiamento di un attributo di un tupla "Richiesta"
+is valid = not exist
+(select *
+ from Richiesta as r
+ where r.terminata = False
+ and voto_ante != null
+ and voto_ato != null)
+
+if isvalid{
+	continue
+}
+else{
+	rollback
+}
+
+[T.Richiesta.Terminato.solose_accettata]
+scatta al cambiamento di un attributo di un tupla "Richiesta"
+is valid = not exist
+(select *
+ from Richiesta as r
+ where r.terminata = True
+ and r.tipo != accettata)
+if isvalid{
+	continue
+}
+else{
+	rollback
+}
+
+[T.Richiesta.motivazione_sesolose_terminata]
+scatta al cambiamento di un attributo di un tupla "Richiesta"
+is valid = not exist
+(select *
+ from Richiesta as r
+ where (r.motivazione != NULL
+ and r.tipo = "accettata") OR (r.tipo = "rifiuta" and r.motivazione = NULL))
+if isvalid{
+	continue
+}
+else{
+	rollback
+}
+
+____________________________
+OPERAZIONI:
+	creaRichiesta(o: intgz, u: intgz, P: intgz[1..*], ACC: intgz[0..*], i: date, f:date): intgz
+	is valid = (ospitabili(o) >= |P| + 1 AND
+				u not in P AND 
+				i<=f
+				AND NOT EXIST (select*
+							   from Utente as ut
+							   join PeriodoND as pe
+							   where ut.id = o AND ((p.dataI <= i AND i <= p.dataF) OR (p.dataI <= f AND p.dataF >= f) OR (i >= p.dataI AND f <= df)))
+
+	if isvalid{
+		insert into Richiesta(i,f,NULL,NULL,NULL,NULL,x = prossimo id disponibile, False, o, u)
+		for p in P{
+			insert into ut_ri(x,p)
+		}
+	}
+	else{
+		rollback
+	}
