@@ -81,6 +81,16 @@ Specifica use-case
 
 	use case AccessoArea:
 		Accedi(c: Cliente, a: Area, v: Varco): Accesso
+		precondizioni:
+			ar_va(ar,v) AND
+			EXIST abb,ar,d ab_cl(abb,.this) and areeAccessibili(abb,ar) and (a in ar) and scadenza(abb,d) and (d > now())
+		postCondizioni:
+			nuovi elementi del dominio: alpha
+			nuove tuple:
+				accesso(alpha)
+				ac_va(alpha,v)
+				ac_ar(alpha,a)
+				time(alpha,now())
 
 	use case Iscrivi:
 		CreaAbbonamento(c: Cliente, o: Offerta): Abbonamento
@@ -96,10 +106,10 @@ Specifica use-case
 		postCondizioni: A = {i | (ALL d date(d) AND d> now()-1mese and d< now()+1mese) and pdaystats1(a,orai,oraf,d,i)}
 						MAX | MAX in A and NOT EXIST i2 and i2 in A and i2 > MAX
 						MIN | MIN in A and NOT EXIST i2 and i2 in A and i2 < MIN
-						AVG =  A/|A|
+						AVG =  sommatoria su A/|A|
 						result = MAX,MIN,AVG
 
-		pdaystats1(a: Area, orai: ora, oraf: ora, d: date)
+		pdaystats1(a: Area, orai: ora, oraf: ora, d: date): int
 			preCondizioni: orai < oraf
 			postCondizioni:
 			R = {acc | EXIST t,d,o ac_ar(acc,a) and time(acc,t) and ora(t,o) and date(t,d) and orai < o < oraf and date = d}
