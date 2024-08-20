@@ -1,0 +1,40 @@
+Utente
+	nome
+	cognome
+	indirizzo mail
+	città provenienza
+	dataIascrizione
+	punteggio
+
+viaggio
+	nome
+	partecipanti
+	organizzatore
+	attività
+	prezzo
+
+attività
+	nome
+	inizio
+	durata
+	luogo
+	info txt
+	codici identificativi biglietti/prenotazioni
+	può essere composta
+	prezzo
+
+luogo
+	città 
+	indirizzo
+	regione
+	nazione
+
+spostamenti eres attività
+	mezzo
+	luogo partenza
+	luogo arrivo
+pernottamento eres attività
+
+feedback
+	voto 1..5
+Regione

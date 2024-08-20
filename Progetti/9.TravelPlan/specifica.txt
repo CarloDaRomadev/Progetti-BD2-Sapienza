@@ -1,0 +1,110 @@
+Specifica tipi di dato:
+	Laddr: tipo composto (via: stringa, numeroCivico: int>0)
+	Addr: stringa secondo regex
+	tipoDurata: tipo composto (ore: int>0, minuti: 0..59)
+	cod : stringa secondo regex
+	tipoMese: enumerativo ('gen', 'feb', 'mar', 'apr'...)
+
+-----------------------------
+
+Specifica Classe Utente
+	vincoli Esterni:
+		[V.Utente.non_valuta_suo_viaggio]
+		ALL u,v organizza(u,v) -> not exist vo Partecipa(u,v,vo)
+
+		[V.Utente.Non_partecipa_a_viaggi_intrecciati]
+		ALL v1,i1,f1,v2,i2,f2,u 
+			Viaggio(v1) and Viaggio(v2) and inizio(v1,i1) and inizio(v2,i2) and fine(v1,f1) and fine(v2,f2) ->
+				i2 > f1 or i1 > f2
+
+	operazioni:
+		punteggio():
+		preCondizioni: EXIST v organizza(.this,v) and
+							 exist u,vo voto(u,v,vo)
+		postCondizioni:
+			A = {a | u,v exist organizza(.this,v) and voto(u,v,a)}
+			N = {a | u,v exist organizza(.this,v) and voto(u,v,a) and a >= 4}
+			sommatoria su A / |A| <= 3 -> result = 0
+			and
+			result = parte intera inferiore (0.1 * |N|)
+
+Specifica Classe Attività
+	Vincoli Esterni:
+		[V.Attività.nonIntrecciare_attività_in_attività_composta]
+		ALL c,s1,s2,i1,d1,i2,d2
+		co_se(c,s1) and co_se(c,s2) and inizio(s1,i1) and inizio(s2,i2) and durata(s1,d1) and durata(s2,d2) -> 
+			i1 + d1 < i2 or i2 + d2 < i1
+
+		[V.Attività.Pernottamento_non_in_Composta]
+		ALL c,s,p co_se(c,s) and pernottamento(s,p) -> p = false
+
+		[V.Attività.NonPiùDiUnPernottamentoANottePerPersona]
+		ALL a1,a2,p1,p2,u,d1,d2,t1,t2 
+		Attività(a) and pernottamento(a1,p1) and p1 = true and pernottamento(a2,p2) and p2 = true and inizio(a1,t1) and inizio(a2,t2) and date(t2,d2) date(t1,d1) and d1 = d2 -> 
+			not (at_ut(a1,u) and at_ut(a2,u))
+
+		[V.Coerenza_utente_viaggio_attività]
+		ALL u,a,v at-ut(u,a) and at_vi(a,v) -> Partecipa(u,v)
+
+		[V.Se_è_in_composta_non_ha_utenti]
+		ALL s,c co_se(c,s) -> not Exist u at_ut(s,u)
+
+		[V.Attività.Tipologia_sesolose_no_pernottamento]
+		ALL s,p Pernottamento(s,p) and p = true <-> Exist t at_ti(s,t)
+
+		[V.Attività.SempliceInCompostaNonHaCollegamentiConViaggio]
+		ALL a,c co_se(c,a) -> not exist v at_vi(a,v)
+
+	operazioni:
+		prezzo(): float >= 0
+		preCondizioni: nessuna
+		postCondizioni: A = {p | exist sco_se(.this,s) and prezzo(s,p)}
+		res = sommatoria su A
+
+		inizio(): datetime >= 0
+		preCondizioni: 
+		ALL c,s1,s2,i1,d1,i2,d2
+		co_se(c,s1) and co_se(c,s2) and inizio(s1,i1) and inizio(s2,i2) and durata(s1,d1) and durata(s2,d2) -> 
+			i1 + d1 < i2 or i2 + d2 < i1
+		postCondizioni: A = {p | exist sco_se(.this,s) and inizio(s,p)}
+		x | x in A and not exist y y<x and y in A
+		res = x
+
+		durata(): tipoDurata  
+		preCondizioni: nessuna
+		postCondizioni: A = {p | exist sco_se(.this,s) and durata(s,p)}
+		res = sommatoria su A
+
+Specifica Classe Viaggio
+	Vincoli Esterni:
+		[V.Viaggio.minP<maxP]
+		ALL m,M,v maxP(v,M) and minP(v,m) -> m < M
+
+		[V.Viaggio.inizio<fine]
+		ALL v,i,f inizio(v,i) and fine(v,f) -> i<f
+
+	operazioni:
+		inizio(): date
+		preCondizioni:
+			nessuna
+		postCondizioni:
+			A = {a | at_vi(a,.this)}
+			x | exist d inizio(x,d) and x in A and not exist y,d2 y in A and inizio(y,d2) and d > d2
+
+		fine(): date
+		preCondizioni:
+			nessuna
+		postCondizioni:
+			A = {a | at_vi(a,.this)}
+			x | exist d,du inizio(x,d) and durata(x,du) and x in A and not exist y,d2,du2 y in A and inizio(y,d2) and durata(x,du2) and d + du < d2 + du2
+
+		prezzo(): float>=0
+		preCondizioni:
+			nessuna
+		postCondizioni:
+			A = {p | exist a at_vi(a,.this) and prezzo(a,p)}
+			result = sommatoria su A
+
+-----------------------------
+
+Specifica Use-Case
