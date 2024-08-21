@@ -1,0 +1,98 @@
+prefazione:
+	cambio dei tipi di dato per renderli compatibili col dbms
+	stringa -> varchar
+	int -> integer
+	int>0 -> create domain intgz as integer
+				check value > 0
+
+	int>=0 -> create domain intgez as integer
+				check value >= 0
+	float -> reale
+	float>0 -> create domain realegz as reale
+				check value > 0 
+
+	float>=0 -> create domain realegez as reale
+					check value >= 0
+	date -> date
+	dateTime -> dateTime
+	1..5 -> create domian utc as integer 
+				check (0 < value <= 5)
+
+	0..59 -> create domian utcn as integer 
+				check (0 <= value <= 59)
+
+	Laddr: create type Laddr as (via: varchar, civico: intgz)
+	Addr: create domain cod as varchar
+			check value is like ... regex ...
+	tipoDurata: create type tipoDurata as (ore: intgez, minuti: utcn)
+	cod: create domain cod as varchar
+			check value is like ... regex ...
+	tipoMese: create type tipoMese as enum('gen',...,'dec')
+
+
+	# nuovo 
+	tipoSemplice: create type tipoSemplice as enum(statica, trasporto, pernottamento)
+
+	per il database consultare "BD_annotato.pdf" --->
+
+	Nuovi vincoli esterni introdotti con la ristrutturazione:
+	[V.Attività_complete,disjoint]
+1.	ALL a,s,c Attività(a) and Composta(c) and Semplice(s) -> not (isa_c(a,c) and isa_s(a,s)) and not(not isa_c(a,c) and not isa_s(a,s)) 
+
+	[V.Semplice_è_trasporto_sesolose_ha_mezzo_e_ha_arrivo]
+2.	ALL s,t Semplice(s) and tipo(s,t) and t = 'trasposto' <-> EXIST m sp_me(s,m)
+
+	[V.Semplice_è_statica_sesolose_ha_categoria]
+3.	ALL s,t Semplice(s) and tipo(s,t) and t = 'statica' <-> EXIST ti Tipologia(ti) and at_ti(s,ti)
+
+converto le operazioni di classe:
+utente:
+	create function as punteggio(): intgez
+		Q = select avg(p.voto)
+			from Partecipa as p
+			join Viaggio as v on p.Viaggio = v.id
+			where v.utente = .this
+
+		if q.avg <= 3 {result = 0}
+		else{
+			A = select count(p.voto)
+				from Partecipa as p
+				join Viaggio as v on p.Viaggio = v.id
+			    where v.utente = .this and p.voto > 4
+
+		result = sub(0.1 * A.count)
+		}
+
+composta:
+	create function as inizio(): datetime
+		select min(inizio(s))
+		from Semplice as s
+		join co_se on s.id = co_se.semplice
+		where co_se.composta = .this
+
+	create function as fine(): datetime
+		select max(fine(s))
+		from Semplice as s
+		join co_se on s.id = co_se.semplice
+		where co_se.composta = .this
+
+	create function as durata(): tipoDurata
+		select sum(s.durata)
+		from Semplice as s
+		join co_se on s.id = co_se.semplice
+		where co_se.composta = .this
+
+	create function as prezzo(): realegez
+		select sum(s.prezzo)
+		from Semplice as s
+		join co_se on s.id = co_se.semplice
+		where co_se.composta = .this
+
+Semplice: 
+	create function as fine(): datetime
+		Q = select *
+			from s
+			where s.id = .this
+	result = Q.inizio + Q.durata 
+
+triggers:

@@ -1,9 +1,9 @@
 Specifica tipi di dato:
-	Laddr: tipo composto (via: stringa, numeroCivico: int>0)
-	Addr: stringa secondo regex
-	tipoDurata: tipo composto (ore: int>0, minuti: 0..59)
-	cod : stringa secondo regex
-	tipoMese: enumerativo ('gen', 'feb', 'mar', 'apr'...)
+1.	Laddr: tipo composto (via: stringa, numeroCivico: int>0)
+2.	Addr: stringa secondo regex
+3.	tipoDurata: tipo composto (ore: int>0, minuti: 0..59)
+4.	cod : stringa secondo regex
+5.	tipoMese: enumerativo ('gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic')
 
 -----------------------------
 
@@ -118,30 +118,6 @@ Specifica Classe Viaggio
 4. 		[V.Viaggio.inizio_fine_attività_entro_Viaggio]
 		ALL v,i,f Viaggio(v) and inizio(v,i) and fine(v,f) -> not exist a,i1,f1 Attività(a) and inizio(a,i1) and fine(a,f1) and at_vi(a,v) and 
 			(i1<i or f1>f)
-
-	operazioni:
-1.		inizio(): date
-		preCondizioni:
-			nessuna
-		postCondizioni:
-			A = {a | at_vi(a,.this)}
-			x | exist d inizio(x,d) and x in A and not exist y,d2 y in A and inizio(y,d2) and d > d2
-
-2.		fine(): date
-		preCondizioni:
-			nessuna
-		postCondizioni:
-			A = {a | at_vi(a,.this)}
-			x | exist a,f a in A and fine(a,f) and not exist a2,f2 in A and fine(a2,f2) and f<f2
-
-3.		prezzo(): float>=0
-		preCondizioni:
-			nessuna
-		postCondizioni:
-			A = {p | exist a at_vi(a,.this) and prezzo(a,p)}
-			result = sommatoria su A
-
-15 vincoli esterni
 -----------------------------
 
 Specifica Use-Case
@@ -178,18 +154,25 @@ Specifica Use-Case
 			 punteggio(u,p) and p >= punti and exist pr prezzo(c,pr) and min<=pr<=max}
 		result = A
 
-	ricerca1.3(dataI:date,dataF:date):Città[0..*]
-	ricerca1.2(d:città,dateI:date,dataF:date): Viaggio[0..*]
-
+4.	ricerca1.3(dataI:date,dataF:date):Città[0..*]
+5.	ricerca1.2(d:città,dateI:date,dataF:date): Viaggio[0..*]
 
 	use-case organizza
-	creaViaggio(nome,)
-	creaAttivitàComposta()
-	creaAttivitàSemplice()
+1.	creaViaggio(nome: stringa, minP: int>0, maxP: int>0, a: Attività[0..*]): Viaggio
+2.	aggiungiAttività(v: Viaggio, a: Attività): Viaggio
+3.	creaAttivitàComposta(nome: stringa, a: Attività[2..*]): Composta
+4.	creaAttivitàStatica(nome: stringa, prezzo: float>=0, inizio: dataora, durata: tipoDurata, a: Luogo): Statica
+5.	creaAttivitàStatica(nome: stringa, prezzo: float>=0, inizio: dataora, durata: tipoDurata, a: Luogo, p:Luogo): Spostamento
+6.	creaAttivitàPernottamento(nome: stringa, prezzo: float>=0, inizio: dataora, durata: tipoDurata, a: Luogo): Pernottamento
 
 	use-case partecipa
-	partecip
+1.	partecipa(v: Viaggio)
 
 	use-case registrati
+1.	registrazione(n: stringa, cognome: stringa, indirizzomail: Addr): Utente
 
 	use-case valuta
+1.	valutazione(v: 1..5, v: Viaggio): Partecipa
+
+
+Continua in "parte2.txt" con ristrutturazione --->
