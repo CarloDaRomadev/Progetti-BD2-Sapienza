@@ -58,10 +58,7 @@ Specifica Classe Attività
 6.		[V.Se_è_in_composta_non_ha_utenti]
 		ALL s,c co_se(c,s) -> not Exist u at_ut(s,u)
 
-7.		[V.Attività.Tipologia_sesolose_no_pernottamento]
-		ALL s,p Pernottamento(s,p) and p = true <-> Exist t at_ti(s,t)
-
-8.		[V.Attività.SempliceInCompostaNonHaCollegamentiConViaggio]
+7.		[V.Attività.SempliceInCompostaNonHaCollegamentiConViaggio]
 		ALL a,c co_se(c,a) -> not exist v at_vi(a,v)
 
 	operazioni:
@@ -145,7 +142,7 @@ Specifica Use-Case
 			 exist i inizio(a,i) and dataI < i < dataF}
 		result = A
 
-3.  ricerca1.5(min: float >= 0, max: float >= 0, r: Regione[0..*], dataI: date, dataF: date, punti: int >= 0)
+3.  ricerca1.5(min: float >= 0, max: float >= 0, r: Regione[1..*], dataI: date, dataF: date, punti: int >= 0)
     preCondizioni:
     	min<max and dataI<dataF
     postCondizioni:

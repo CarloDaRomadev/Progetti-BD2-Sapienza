@@ -1,3 +1,5 @@
+ATTENZIONE, NON ADATTO AI DEBOLI DI CUORE!
+
 prefazione:
 	cambio dei tipi di dato per renderli compatibili col dbms
 	stringa -> varchar
@@ -27,7 +29,7 @@ prefazione:
 	tipoDurata: create type tipoDurata as (ore: intgez, minuti: utcn)
 	cod: create domain cod as varchar
 			check value is like ... regex ...
-	tipoMese: create type tipoMese as enum('gen',...,'dec')
+	tipoMese: create type tipoMese as enum('gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic')
 
 
 	# nuovo 
@@ -96,3 +98,259 @@ Semplice:
 	result = Q.inizio + Q.durata 
 
 triggers:
+[V.Utente.non_valuta_suo_viaggio]
+inserimento in partecipa
+isvalid = not exist (select *
+					 from Viaggio as v
+					 join partecipa as p on p.utente = u.utente and p.viaggio = v.id
+					 where v.voto is not null and v.utente = p.utente)
+
+
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+[V.Utente.Non_partecipa_a_viaggi_intrecciati]
+inserimento in partecipa
+isvalid = not exist (select *
+					 from Viaggio as v1, Viaggio as v2
+					 join partecipa as p1 on p1.viaggio = v1.id
+					 join partecipa as p2 on p2.viaggio = v2.id
+					 where p1.utente = p2.utente and (v1.id != v2.id) 
+					 and v1.inizio < v2.inizio and fine(v2) < fine(v1)
+
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+[V.Utente.NonPartecipa_attività_sovreapposte_semplice]
+inserimento in at_ut
+isvalid = not exist (select *
+					 from Semplice as s1, Semplice as s2
+					 join Attività as a on s1.attività = a.id
+					 join at_ut as at_ut1 on a.id on at_ut1.attività
+					 join Attività as a on s2.attività = a.id
+					 join at_ut as at_ut2 on a.id on at_ut2.attività
+					 where s1 != s2 and at_ut1.utente = at_ut2.utente and s1.inizio < s2.inizio and fine(s1) > fine(s2))
+
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+[V.Utente.NonPartecipa_attività_sovreapposte_composte]
+inserimento in at_ut
+
+[V.Attività.FineDopoDiInizio]
+inserimento in Semplice
+isvalid = not exist (select *
+					 from Composta as s1, Composta as s2
+					 join Attività as a on s1.attività = a.id
+					 join at_ut as at_ut1 on a.id on at_ut1.attività
+					 join Attività as a on s2.attività = a.id
+					 join at_ut as at_ut2 on a.id on at_ut2.attività
+					 where s1 != s2 and at_ut1.utente = at_ut2.utente and inizio(s1) < inizio(s2) and fine(s1) > fine(s2))
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+[V.Attività.nonIntrecciare_attività_in_attività_composta]
+inserimento in composta
+isvalid = not exist (select *
+					 from Semplice as s1, Semplice as s2, Composta as c
+					 join co_se as co_se1 on s1.id on co_se1.semplice
+					 join co_se as co_se2 on s2.id on co_se2.semplice
+					 where s1 != s2 and s1.inizio < s2.inizio and fine(s1) > fine(s2))
+
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+[V.Attività.Pernottamento_non_in_Composta]
+inserimento in composta
+isvalid = not exist (select * 
+					 from Semplice as s
+					 join co_se on co_se.semplice = s.id
+					 where s.tipo = 'Pernottamento')
+
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+[V.Attività.NonPiùDiUnPernottamentoANottePerPersona]
+inserimento in at_ut
+isvalid = not exist (select * 
+					 from Semplice as s1, Semplice as s2
+					 join Attività as a1 on a1.id = s1.attività
+					 join Attività as a2 on a2.id = s2.attività
+					 join at_ut as at_ut1 on at_ut1.attività = a1.id
+					 join at_ut as at_ut2 on at_ut2.attività = a2.id
+					 where at_ut1.utente = at_ut2.utente and data(s1.inizio) = data(s2.inizio)
+
+
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+[V.Coerenza_utente_viaggio_attività]
+inserimento in Attività
+isvalid = not exist (select *
+					 from Attività as a
+					 join Viaggio as v on v.id = a.viaggio
+					 join at_ut on at_ut.attività = a.id
+					 join Utente as u on at_ut.utente = u.id
+					 where u.id not in (select u2.id
+					 					from Utente as u2 
+										join partecipa as p on p.utente = u.id
+										where p.viaggio = v.id))
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+[V.Attività.SempliceInCompostaNonHaCollegamentiConViaggio]
+inserimento in attività
+isvalid = not exist (select *
+					 from Attività as a 
+					 join Semplice as s on a.id = s.attività
+					 join co_se on co_se.semplice = s.id
+					 where a.viaggio is not null)
+
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+[V.Viaggio.inizio<fine]
+inserimento/ modifica viaggio
+isvalid = not exist (select *
+					 from Viaggio as v
+					 where v.inizio > v.fine
+	continue
+}
+else {
+	rollback
+}
+
+[V.Viaggio.no_Overbooking]
+is valid = not exist ((with q as select count(p), p.viaggio as id
+								 from partecipa as p 
+		 					     group by p.viaggio)
+select * 
+from q, Viaggio as v	
+where q.id	= v.id
+and v.maxP < q.count)
+
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+[V.Viaggio.inizio_fine_attività_entro_Viaggio_semplice]
+inserimento in attività
+isvalid = not exist (select *
+					 from Viaggio as v
+					 join Attività as a on a.viaggio = v.id
+					 join Semplice as s on a.id = s.attività
+					 where s.inizio < v.inizio or fine(s) > fine(v))
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+[V.Viaggio.inizio_fine_attività_entro_Viaggio_composta]
+inserimento in attività
+isvalid = not exist (select *
+					 from Viaggio as v
+					 join Attività as a on a.viaggio = v.id
+					 join Composta as c on a.id = c.attività
+					 where inizio(s) < v.inizio or fine(s) > v.fine)
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+#aggiunte
+[V.Attività_complete,disjoint]
+inserimento in attività
+isvalid = not exist (select *
+					 from Attività as a
+					 left outer join Semplice as s on s.attività = a.id
+					 left outer join Composta as c on c.attività = a.id
+					 where (s.attività is null and c.attività is null) or (s.attività is not null and c.attività is not null))
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+[V.Semplice_è_trasporto_sesolose_ha_mezzo_e_ha_arrivo]
+inserimento in attività
+isvalid = not exist (select *
+					 from Semplice as a
+					 where (a.mezzo is null and a.tipo = 'spostamento') or 
+					 		(a.mezzo is not null and a.tipo != 'spostamento'))
+
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+[V.Semplice_è_statica_sesolose_ha_categoria]
+inserimento in attività
+isvalid = not exist (selet * 
+					 from Semplice as a
+					 where (a.tipologia is null and a.tipo = 'statica') or
+					 		(a.tipologia is not null and a.tipo != 'statica'))
+if isvalid{
+	continue
+}
+else {
+	rollback
+}
+
+operazioni:
+
+1.	Stats(): (tipoMese, intgez)[12]
+	Result = select count(v.id), m.nome
+			 from Viaggio as v
+			 where (now() - 12 mesi) < v.inizio 
+			 group by mese(v.inizio)
+
+2.  ricerca1.5(min: realegez, max: realegez, r: intgz[1..*], dataI: date, dataF: date, punti: intgez): intgz[0..*]
+	Result = select v.id
+			 from Viaggio as v
+			 join Utente as u on v.utente = u.id
+			 where min <= v.prezzo <= max and dataI <= v.inizio <= dataF and punteggio(u) >= punti
