@@ -55,7 +55,7 @@ utente:
 			join Viaggio as v on p.Viaggio = v.id
 			where v.utente = .this
 
-		if q.avg <= 3 {result = 0}
+		if Q.avg <= 3 {result = 0}
 		else{
 			A = select count(p.voto)
 				from Partecipa as p

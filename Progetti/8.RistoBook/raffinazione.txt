@@ -25,6 +25,7 @@ promo
 	percentuale di sconto
 	periodo
 	giorni
+	numeroCoperti giornalieri massimi
 
 periodo chiusura
 	lasso di tempo
