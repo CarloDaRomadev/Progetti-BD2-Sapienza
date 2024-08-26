@@ -1,0 +1,308 @@
+conversione tipi di dato per renderli conformi al DBMS
+	int -> integer
+	int>=0 -> create domain intgez as integer
+				check value >= 0
+	int>0 -> create domain intgz as integer
+				check value > 0
+	float>=0 -> create domain realegez as integer
+				check value >= 0
+	int>0 -> create domain realegz as integer
+				check value > 0
+	0..100 -> create domain ztc as integer
+				check 0 < value < 100
+	dataora -> datetime
+	ora -> time
+	data -> date
+	stringa -> varchar
+	Laddr -> create type Laddr as (via: varchar, civico: intgz)
+	tipoIva -> create domain TipoIva as varchar
+					check value is like "regex"
+	Addr -> create type Addr as varchar
+				check value is like "regex"
+	bool -> boolean
+	tipoPrenotazione -> create type tipoPrenotazione as enum('Rifiutata', 'Accettata')
+
+nuovi vincoli esterni o vincoli esterni modificati a seguito della ristrutturazione:
+
+VINCOLI AGGIUNTI:
+
+1.	[V.PRENOTAZIONE.prenonotazione.timer<->Rifiutata]
+	ALL p,t timer(p,t) <-> exist tp tipo(p,tp) and tp = 'rifiutata'
+
+2.	[V.PRENOTAZIONE.prenonotazione.timea<->Accettata]
+	ALL p,t timea(p,t) <-> exist tp tipo(p,tp) and tp = 'accettata'
+
+3.	[V.PRENOTAZIONE.timean<timePasto]
+	ALL a,d,p,pr Prenotazione(pr) and isaan(pr,a) and timean(a,d) and timepasto(pr,p) -> p < d
+
+4.	[V.PRENOTAZIONE.Completata/nonUsata<->Accettata_e_non_annullata]
+	ALL p Completata(p) or NonUsata(p) -> exist t Tipo(p,t) and t = 'accettata' and not exist a isaan(p,a)
+
+5.	[V.PRENOTAZIONE.timec/timen > timepasto]
+	(ALL pr,c,t,p Prenotazione(pr) and timepasto(pr,p) and timec(c,t) and isac(pr,c) -> t > p)
+	and
+	(ALL pr,c,t,p Prenotazione(pr) and timepasto(pr,p) and timen(c,t) and isac(pr,c) -> t > p)
+
+6.	[V.completata/nonUsata.disjoint]
+	ALL p,c,n Prenotazione(p) -> not isac(p,c) and isan(p,n)
+
+VINCOLI RIMOSSI O MODIFICATI:
+
+1.	[V.PRENOTAZIONE.timep_prima_timePasto]
+
+2.	[V.PRENOTAZIONE.timean_prima_timePasto_dopo_timep]
+
+3.	[V.PRENOTAZIONE.timea_prima_timePasto_dopo_timep]
+
+4.	[V.PRENOTAZIONE.timea_prima_timePasto_dopo_timep]
+
+5.	[V.PRENOTAZIONE.Time_Completata_dopo_timepasto]
+
+6.	[V.PRENOTAZIONE.Time_NonUsata_dopo_timepasto]
+
+7.	[V.PRENOTAZIONE.Completata/NonUsataSoloSeAccettata_e_non_annullata]
+
+8.	[V.PRENOTAZIONE.NonAccettarePrenotazioniAnnullate]
+
+9.	[V.PRENOTAZIONE.NonRifiutarePrenotazioniAnnullate]
+
+10.	[V.PERIODOCHIUSURAinizio_prima_di_fine]
+
+11.	[V.PROMOdataI<dataF]
+
+12. [V.PROMOoraI<oraF]
+
+(implementati con dei semplici check ne dbms)
+
+TRIGGERS:
+	
+1.	[T.PRENOTAZIONE.prenonotazione.timer<->Rifiutata]
+	modifica prenotazione
+	postOperazione
+	isvalid = not Exist (select *
+						 from Prenotazione as p
+						 where (p.tipo != 'Rifiuatata' and p.timer != null) or (p.tipo = 'Rifiuatata' and p.timer = null)) 
+
+	if isvalid = true{
+		continue
+	}
+	else{
+		rollback
+	}
+
+
+2.	[T.PRENOTAZIONE.prenonotazione.timea<->Accettata]
+	modifica prenotazione
+	postOperazione
+	isvalid = not Exist (select *
+						 from Prenotazione as p
+						 where (p.tipo != 'Accettata' and p.timea != null) or (p.tipo = 'Accettata' and p.timea = null)) 
+
+	if isvalid = true{
+		continue
+	}
+	else{
+		rollback
+	}
+
+
+3.	[T.PRENOTAZIONE.timean<timePasto]
+	inserimento in Annullata
+	postOperazione
+	isvalid = not Exist (select *
+						 from Prenotazione as p
+						 join a as Annullata on p.id = Annulltata.prenotazione
+						 where a.timean < timepasto)
+
+	if isvalid = true{
+		continue
+	}
+	else{
+		roleback
+	}
+
+
+4.	[T.PRENOTAZIONE.Completata/nonUsata<->Accettata_e_non_annullata]
+	inserimento completata o in nonUsata
+	postOperazione
+	isvalid = notExist (select * 
+						from Prenotazione as p
+						left outer join Annullata as a on p.id = a.prenotazione
+						left outer join Completata as c on p.id = c.prenotazione
+						left outer join NonUsata as n on p.id = n.prenotazione
+						where (p.tipoPrenotazione != 'Accettata' and (c.* is not null or p.* is not null)) or
+							  (a.* id not null and (c.* is not null or n.* is not null))
+						)
+
+	if isvalid = true{
+		continue
+	}
+	else{
+		roleback
+	}
+	
+
+4.1.[T.Completata/nonUsata.disjoint]
+	modifica Prenotazione
+	postOperazione
+	isvalid = notExist (select * 
+						from Prenotazione as p
+						left outer join Completa as c on p.id = c.prenotazione
+						left outer join NonUsata as n on p.id = n.prenotazione
+						where c.* is not null and n.* is not null)
+
+	if isvalid = true{
+		continue
+	}
+	else{
+		roleback
+	}						
+
+
+6.  [T.PROMO.promo_scade_in_un_giorno_in_cui_vale]
+	is valid = notExist (select *
+						 from Promo as p
+						 where dgiorno(p.dataF) not in (select pr_ti.tipoGiorno
+						 						      from pr_ti
+						 						      where pr_ti.pr = p))
+
+	// dgiorno restituisce il giorno della settimana data una data (scusate il gioco di parole)
+
+	if isvalid = true{
+		continue
+	}
+	else{
+		genera errore di stato illegale 
+	}						
+				 						      
+
+
+7.  [T.PERIODOCHIUSURA.nonIntrecciarePeriodi]
+	creazioneModifica PeriodoChiusuera
+	postOperazione
+	isavalid = not exist (select *
+						  from PeriodoChiusura as p, PeriodoChiusura as p2
+						  where p != p2 and p.ristorante = p2.ristorante and 
+						  		p2.dataOraI < p.dataOraI AND p2.dataOraF > p.dataOraF)
+
+	if isvalid = true{
+		continue
+	}
+	else{
+		roleback
+	}						
+
+					
+8.	[T.PRENOTAZIONE.NumeroCommensali<maxcop]
+	inserimento in prenotazione
+	preOperazione
+	isavalid = not exist (select *
+						  from Prenotazione as p
+						  join Promo as pro on p.promo = pro.id
+						  where pro.maxcop < p.n)
+
+	if isvalid = true{
+		continue
+	}
+	else{
+		roleback
+	}				
+
+9.	[T.PRENOTAZIONE.timepasto_ricade_nei_giorni_della_promo] 
+	inserimento in prenotazione
+	preOperazione
+	isavalid = not exist (select *
+						  from Prenotazione as p
+						  join Promo as pro
+						  where (pro.dateI > ddate(p.timepasto) or ddate(p.timepasto) > pro.dateF) or (dgiorno(p.timepasto) not in (select pr_ti.tipoGiorno
+						  																											from pr_ti
+						  																											where pr_ti.pr = p)
+						  		)
+						  )
+
+	if isvalid = true{
+		continue
+	}
+	else{
+		roleback
+	}		
+
+9.1.[T.PRENOTAZIONE.timep_tra_date_promo]
+	inserimento in prenotazione
+	preOperazione
+	isvalid = not exist (select *
+						 from Prenotazione as p
+						 join Promo as pro 
+						 where (pro.dateI > ddate(p.timep) or ddate(p.timep) > pro.dateF) 
+
+	if isvalid = true{
+		continue
+	}
+	else{
+		roleback
+	}		
+
+
+10.	[T.PRENOTAZIONE.maxcop>=Prenotazioni]
+	inserimetno in prenotazione
+	preOperazione
+	isvalid = not exist((
+						  select sum(p.n) as somma, p.maxcop)
+						  from Prenotazione as p
+						  join Promo as pr on pr.if = p.promo
+						  group by pr.id)
+					having p.maxcop < somma)
+
+	if isvalid = true{
+		continue
+	}
+	else{
+		roleback
+	}				
+
+11. [V.PRENOTAZIONE.Coerenza_ristorante_promo]
+	inserimento in Prenotazione
+	preOperazione
+	isavalid = not exist (select *
+						  from Prenotazione as p
+						  join Promo as pro on p.promo = pro.id
+						  where p.ristorante != pro.ristorante)
+
+	if isvalid = true{
+		continue
+	}
+	else{
+		roleback
+	}				
+
+FUNCTIONS:
+
+	create Function as postiDisponibili(d: date, p: intgz) : int>=0
+		Q = select pro.maxcop, sum(pre.n)
+			from Promo as pro
+			join Prenotazione as pre on pro.id = pre.promo 
+			where pro.id = p and pre.timepasto = date
+			group by pro.id
+
+		result = Q.maxcop - Q.somma
+
+USE-CASE FUNCTIONS:
+	statsU(c: varchar[1..*], x: varchar, t: ztc, d: date, n: intgz, naz: varchar): varchar[0..*]
+		select r.nome
+		from Ristorante as r
+		join città as c on r.città = c.nome
+		join Promo as p on p.ristorante = r.id
+		join cu_ri on cu_ri.ristorante = r.id
+		where c.nome = x and c.nazione = naz and p.percentuale >= t and cu_ri.cucina in c
+
+	statsP(r: tipoIva, i:date, f: date): (intgz,realegez)[0...*]
+		i < f and il chiamante è il proprietario effettivo del ristorante.
+		Q = select avg()
+			from 
+			where 
+
+	statsPLocal(r: tipoIva, i:date, f: date, p: intgz)
+		i < f
+		with c as select date
+
+

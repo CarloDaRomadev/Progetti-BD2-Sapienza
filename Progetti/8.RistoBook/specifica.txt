@@ -1,0 +1,140 @@
+Specifica tipi di dato:
+	Laddr : tipo composto(Via: Stringa, civico: int>0)
+	Addr : stringa secondo regex
+	TipoIva : stringa numerica secondo regex
+	TipoGiorno : enum('lun','mar','mer','gio','ven','sab','dom')
+
+Specifica Classe Prenotazione:
+1.	[V.PRENOTAZIONE.timep_prima_timePasto]
+	ALL pr,p,pa Prenotazione(pr) and timep(pr,p) and timepasto(pe,pa) ->
+		p < pa
+
+2.	[V.PRENOTAZIONE.timean_prima_timePasto_dopo_timep]
+	ALL pr,p,pa,an Prenotazione(pe) and timep(pr,p) and timepasto(pr,pa) and timean(pr,an) and Annullata(pr) ->
+		p <= an <= pa
+
+3.	[V.PRENOTAZIONE.timea_prima_timePasto_dopo_timep]
+	ALL pr,p,pa,an Prenotazione(pe) and timep(pr,p) and timepasto(pr,pa) and timea(pr,a) and Accettata(pr) ->
+		p <= a <= pa
+
+4.	[V.PRENOTAZIONE.timea_prima_timePasto_dopo_timep]
+	ALL pr,p,pa,r Prenotazione(pe) and timep(pr,p) and timepasto(pr,pa) and timer(pr,r) and Rifiutata(pr) ->
+		p <= r <= pa]
+
+5.	[V.PRENOTAZIONE.Time_Completata_dopo_timepasto]
+	ALL pr,tp,c Prenotazione(pr) AND Completata(pr) and timepasto(pr,tp) and timec(pr,c) -> 
+		c >= pr
+
+6.	[V.PRENOTAZIONE.Time_NonUsata_dopo_timepasto]
+	ALL pr,tp,n Prenotazione(pr) AND NonUsata(pr) and timepasto(pr,p) and timen(pr,n) -> 
+		n >= pr
+
+7.	[V.PRENOTAZIONE.Completata/NonUsataSoloSeAccettata_e_non_annullata]
+	ALL pr Completata(pr) or NonUsata(pr) -> Accettata(pr) and not Annullata(pr)
+
+8.	[V.PRENOTAZIONE.NonAccettarePrenotazioniAnnullate]
+	ALL pr,a,an Prenotazione(pr) and Annullata(pr) and Accetata(pr) and timea(pr,a) and timean(pr,an) ->
+		a < an
+
+9.	[V.PRENOTAZIONE.NonRifiutarePrenotazioniAnnullate]
+	ALL pr,r,an Prenotazione(pr) and Annullata(pr) and Rifiutata(pr) and timer(pr,r) and timean(pr,an) ->
+		r < an
+
+10. [V.PRENOTAZIONE.Coerenza_ristorante_promo]
+	ALL p,r,pro Prenotazione(p) and pre_pro(p,pro) and pre_ri(p,r) -> pr_ri(pro,r)
+
+11. [V.PRENOTAZIONE.timep_tra_date_promo]
+	ALL p,pro,i,f,d pre_pro(p,pro) and dataI(pro,i) and dataF(pro,f) and timep(p,d) -> i <= d <= f
+
+Specifica classe PeriodoChiusura:
+1.	[V.PERIODOCHIUSURA.inizio_prima_di_fine]
+	ALL p,i,f dataoraI(p,i) and dataoraF(p,f) -> i < f
+
+2.	[V.PERIODOCHIUSURA.nonIntrecciarePeriodi]
+	ALL r,p,p2,i,f,i2,f2
+		dataOraI(p,i) and dataOraF(p,f) and dataOraI(p2,i2) and dataOraF(p2,f2) and pe_ri(p,r) and pe_ri(p2,r) ->
+			i > f2 or i2 > f
+
+Specifica classe Promo:
+1.	[V.PROMO.dataI<dataF]
+	ALL p,i,f
+		dataI(p,i) and dataF(p,f) ->
+			i<f
+
+2.	[V.PROMO.promo_scade_in_un_giorno_in_cui_vale]
+	ALL p,f,gio dataF(p,f) and dgiorno(f,gio) and giorno(p,g) ->ù 
+		gio in g
+
+3.  [V.PROMO.oraI<oraF]
+	ALL p,i,f oraI(p,i) and oraF(p,f) ->
+		i < f
+
+	operazioni:
+postiDisponibili(d: date): int >= 0
+	Precondizioni:
+		(all i,f dataI(.this,i) and dataF(.this,f) -> i <= d <= f) 
+		and
+		(all g,gio dgiorno(d,g) and giorno(.this,g) -> gio in g)
+	PostCondizioni:
+		S = {p | EXIST pr,da pre_pro(p,pr) and timePasto(p,da) and da = d}
+		m | maxcop(.this,m)
+		result = m - |S|
+
+Specifica classe Prenotazione:
+1.	[V.PRENOTAZIONE.NumeroCommensali<maxcop]
+	ALL p,nu,pr,m
+		maxcop(pr,m) and n(p,nu) and pre_pro(p,pr) ->
+			n <= m
+
+2.	[V.PRENOTAZIONE.timepasto_ricade_nei_giorni_della_promo] 
+	ALL pre,t,pro,o,d,gio,i,f,oi,of,g
+		Prenotazione(pre) and timepasto(pre,t) and ddate(t,d) and pre_pro(p,pro) and 
+		dataI(pro,i) and dataF(pro,f) and dora(t,o) and oraI(t,oi) and 
+		oraF(t,of) and dgiorno(d,g) and giorno(pro,gio)->
+			(i < d < f) and (oi < o < of) and (g in gio)
+
+3.	[V.PRENOTAZIONE.maxcop>=Prenotazioni]
+	ALL pr,d,m Promo(pr) and maxcop(pr,m) and date(d) -> 
+		(sommatoria per ogni n su{n | exist p pre_pro(p,pr) and timepasto(p,d)}) <= maxcop
+
+specifica USE-CASE:
+registrazione
+	registrazione(nome: stringa, mail: Addr): Cliente
+
+strumentiPrenotazioneUtente
+	prenota(r: Ristorante, p: Promo[0..1], n: int > 0): Prenotazione
+	annulla(p: Prenotazione): Annullata
+
+strumentiPrenotazionePersonale
+	Accetta(p: Prenotazione): Accettata
+	Rifiuta(p: Prenotazione): Rifiutata
+	SegnaComeCompletata(a: Accettata): Completata
+	SegnaComeNonUsata(a: Accettata): NonUsata
+	creaPeriodoChiusura(i: datetime,f: datetime): PeriodoChiusura
+	attivaPeriodoChiusura...
+	disattivaPeriodoChiusura...
+
+scontistica
+	creaSconto(i: date,f: date,g: tipoGiorno[1..7], orai: time, oraf: time, maxcop: int > 0, perc: 0..100): Promo
+
+statsU(x : Città, tasso: float >= 0, d: date, c: Cucina[1..*], n: int>0): Ristorante[0..*]
+	Precondizioni:
+		nessuna
+	PostCondizioni:
+		result = {r | exist cu,pro,posti,p ci_ri(x,r) and cu_ri(cu,r) and c in cu and pr_ri(pro,r) and postiDisponibili(pro,posti) and n <= posti and percentuale(pro,p) and perc >= p} 
+	
+statsR(r: Ristorante, dataI: date, dataF: date): (Promo,float>=0)[0..*]
+	Precondizioni:
+		dataI < dataF and
+		"il ristorantre deve essere di proprieta del chiamante" //non esistono strumenti per definirlo in FOL
+	Postcondizioni:
+		result  = {p,f |ALL p Promo(p) and pr_ri(p,r) and statsLocal(p,dataI,dataF,f)}
+
+	(AUX)statsLocal(pro: Promo, dataI: date, dataF: date): int>=0
+		Precondizioni:
+			dataI < dataF and
+		Postcondizioni:
+			s = |{pre | Exist d,dconv pre_pro(pre,pro) and timepasto(pre,d) and ddate(d,dconv) and (dataI < d < dataF)}|
+			g = |{d | Exist g, gio dataI < d < dataF and dgiorno(d,g) and giorno(pro,gio) and g in gio}|
+			result = s/g
+
