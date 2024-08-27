@@ -277,7 +277,7 @@ TRIGGERS:
 
 FUNCTIONS:
 
-	create Function as postiDisponibili(d: date, p: intgz) : int>=0
+	create Function as postiDisponibili(d: date, p: intgz) : intgez
 		Q = select pro.maxcop, sum(pre.n)
 			from Promo as pro
 			join Prenotazione as pre on pro.id = pre.promo 
@@ -285,6 +285,18 @@ FUNCTIONS:
 			group by pro.id
 
 		result = Q.maxcop - Q.somma
+
+	create Function as giorniValidità(i: date,f: date, p: id) : intgez
+		i<=f
+		count = 0
+		altrimenti errore
+		for each d in range [i:f]{
+			if pr_ti.promo = p and pt_ti.giorno = dgiorno(d)
+			count ++
+		}
+		return count
+
+		// non penso che tutto ciò sia corretto, se sapete la soluzione fatemi sapere
 
 USE-CASE FUNCTIONS:
 	statsU(c: varchar[1..*], x: varchar, t: ztc, d: date, n: intgz, naz: varchar): varchar[0..*]
@@ -297,12 +309,15 @@ USE-CASE FUNCTIONS:
 
 	statsP(r: tipoIva, i:date, f: date): (intgz,realegez)[0...*]
 		i < f and il chiamante è il proprietario effettivo del ristorante.
-		Q = select avg()
-			from 
-			where 
+		altrimenti solleva errore
+		select statsPLocal(i,f,p)
+		from Promo as p
+		where p.ristorante = r
 
-	statsPLocal(r: tipoIva, i:date, f: date, p: intgz)
+	statsPLocal(i:date, f: date, p: intgz)
 		i < f
-		with c as select date
+		atrimenti solleva errore
+		return (p,giorniValidità(i,f,p))
+
 
 
