@@ -1,0 +1,58 @@
+socio
+	nome
+	cognome
+	coficeFiscale
+	estremi patente di guida
+	se privato indirizzo residenza
+		numero carta di credito in corso di validità
+	se dipendente società società deve essere riconoscita dal sistema
+	può essere cliente abituale
+
+richiesta
+	accettata, rifiutata
+
+patente
+	codice
+	scadenza
+
+carta di credico
+	codice
+	scadenza
+
+società
+	nome
+	sede legale
+	coordinate bancarie iban
+	responsabile smartToGo
+
+noleggio
+	dataoraEntrata
+	dataoraUscita
+	coordinate finali
+
+auto 
+	coordinate
+	targa
+	modello
+	numeroposti
+	data ultima manutenzione
+	categoria
+	tariffa (in basse alla categoria)
+	tradizione or ecocmpatibile
+		se tradizionale km/l
+		se ecocompatibile  autonomia in km
+
+convenzione
+	sconto applicato
+	se incentiva auto ecocompatibili or incentiva categoria
+
+sinistro
+	con controparte / senza controparte
+	ragione
+	feriti
+	ammontare danni
+	luogo
+	ora
+	data
+	descrizione
+	targa veicolo coinvolto se con controparte

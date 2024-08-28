@@ -1,0 +1,159 @@
+specifica tipi di dato
+	SMC: stringa secondo regex
+	CCC: stringa secondo regex
+	CFT: stringa secondo regex
+	TARGA: stringa secondo regex
+	COORD: {x: int,y: int}
+	addr: {via: stringa, civico: int>0}
+	IBAN: stringa secondo regex
+
+specifica classe Socio:
+	vincoli esterni:
+1.	[V.Socio.esisteRichiestaAccettata]
+	ALL s Socio(s) -> Exist r Richiesta pe_ri(s,r) and Accettata(r)
+
+2.	[V.Socio.Patente_nonScaduta]
+	ALL p,s,so,n Socio(so) and pa_so(p,so) and scadenza(p,s) and date(now,n) -> s < n
+
+3.	[V.Sprivato.CartaDiCredito_nonScaduta] 
+	ALL pr,c,b,s sPrivato(pr) and ca_pr(c,pr) and scadenza(c,s) and date(now,n) -> s < n
+
+	operazioni:	
+		abituale(): bool
+		precondizioni:
+			nessuna
+		postcondizioni:
+			T = {t | exist n,e,u,s,d sm_so(s,.this) and no_sm(n,s) and entrata(n,e) and uscita(n,u) and (t = u-e) and ddate(e,d) and now() - 12 mesi < d}
+			sommatoria su T >= 60 ore and sPrivato(.this) -> result = true
+			and
+			sommatoria su T >= 100 ore and sDipendente(.this) -> result = true
+			and result = false
+
+specifica classe Noleggio:
+	vincoli esterni:
+1.	[V.Noleggio.entrata_primadi_Uscita]
+	ALL n,i,f NoleggioTerminato(n) and entrata(n,i) and uscita(n,f) -> 
+		i<f
+
+2.	[V.Noleggio.NonIntersecareNoleggiStessaAuto]
+	ALL n,n2,i,i2,f,f2,a NoleggioTerminato(n) and NoleggioTerminato(n2) and entrata(n,i) and entrata(n,f) and uscita(n2,i2) and uscita(n2,f2) and au_no(a,n) and au_no(a,n2) ->
+		i > f2 or i2 > f
+
+3.	[V.Noleggio.NonIntersecareNoleggiStessaPersona]
+	ALL n,n2,i,i2,f,f2,a NoleggioTerminato(n) and NoleggioTerminato(n2) and entrata(n,i) and entrata(n,f) and uscita(n2,i2) and uscita(n2,f2) and no_sm(n,a) and no_sm(n,a) ->
+		i > f2 or i2 > f
+
+specifica classe Sinistro:
+	vincoli esterni:
+1.	[V.Sinistro.VeicoloNonUrtaSeStesso]
+	ALL s,a,n,as,t,n,t2,n2
+		au_co(a,s) and targa(a,t) and nazione(a,n) and no_si(n,s) and au_no(as,n) and targa(as,t2) and nazione(as,n2) ->
+			(t2 = t1 and n != n2) or (t2 != t)
+
+specifica classe Convenzione
+1.	[V.Convenzione.nonIntrecciare_tipo]
+	ALL t,c1,c2 co_ti(c1,t) and co_ti(c2,t)-> not exist a az_co(a,c1) and az_co(a,c2)
+
+2.	[V.Convenzione.no2eco]
+	ALL a Azienda(a) -> not exist c1,c2 ConvEco(c1) and ConvEco(c2) and az_co(a,c1) and az_co(a,c2)
+
+	operazioni:
+		luogo(): COORD
+		precondizioni: 
+			check: il gps non è rotto
+		postCondizioni:
+			il gps restituisce la posizione
+
+specifica classe Auto
+	operazioni:
+		coord(): COORD
+		precondizioni: 
+			check: il gps non è rotto
+		postCondizioni:
+			il gps restituisce la posizione
+
+specifica use-case
+	specifica calcolaClasseRischio
+		classeRischio(u: Socio): int>=0
+
+	specifica trovaDannataro
+		trova(c: AutoSistema): Socio
+
+	specifica richiediCartaPrivato
+		richiedi(n:nome,c:cognome,cf:CFT,r:addr,c:città,n:nazione,c: CartaDiCredito, p Patente): richiesta
+
+	specifica richiediCartaAziendale
+		richiedi(n:nome,c:cognome,cf:CFT,a: azienda, p: Patente): richiesta
+
+	specifica accettaRifiutaPrivato
+		accetta(r: richiesta): accettata
+		rifiuta(r: richiesta): rifiutata
+
+	specifica accettaRifiutaAziendale
+		accetta(r: richiesta): accettata
+		rifiuta(r: richiesta): rifiutata
+
+	specifica stipulaConvenzione
+		stipula(c: convenzione)
+
+	specifica strumentiAuto
+		accedi(m: AutoSistema)
+		esci() //se ne occupa un sistema esterno
+
+	specifica Stats
+		vantaggiose(t: Tipologia): Azienda
+
+	specifica classe snitchare
+		snitcha(s: strigna)
+
+	specifica classe pagamenti
+		conto(s: Socio, i: date, f: date): float >= 0
+			preCondizioni: 
+				i<f
+			postCondizioni:
+				cl | classeRischio(u:socio,c)
+				a | abituale(s,a)
+				n = sommatoria{c | EXIST n,sm,e,u NoleggioTerminato(n) and no_sm(n,sm) and sm_so(sm,s) and entrata(n,e) and uscita(n,u) and i < e < f and i < u < f and costo(n,s,c)}
+				
+				c < 2 -> nn = n - (n * 0,1)
+				and
+				c >= 5 -> nn = (n * (c*0,1)
+				and
+				nn = n
+
+				a = true -> nnn = nn - (n*0.15)
+				and 
+				nnn = nn
+
+				result = nnn
+
+	AUSILIARIA 
+		costo(n: NoleggioTerminato, s: Socio): float >= 0
+		precondizioni:
+			nessuna
+		postcondizioni:
+			e | entrata(.this,e)
+			u | uscita(.this,u)
+			time = u-e
+			ta | exist a,m,t au_no(a,n) and au_mo(a,m) and mo_ti(m,t) and ta_ti(ta,t)
+			sPrivato(s) ->
+				result = time * (ta)
+			and 
+				t | exist a,m,t au_no(a,n) and au_mo(a,m) and mo_ti(n,t)
+				a | az_di(a,s)
+				x | exist c co_ti(c,t) and az_co(a,c) and az_di(a,s) and scontoApplicato(c,x)
+				e | exist c az_co(a,c) and az_di(a,s) and scontoApplicato(c,e) and ConvEco(c)
+				
+				exist x ->
+					resultParziale = ta - (ta*(x/100))
+				and
+					resultParziale = ta
+
+				exist e and (exist a au_no(a,n) and au_mo(a,m) and Ecocompatibile(m)) ->
+					result = resultParziale - (resultParziale*(e/100))
+
+				and result = resultParziale
+
+	specifica classe StatsF
+		autopreferite(s: Socio): Tipologia
+		ecologiche(a: azienda[1..*])

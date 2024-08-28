@@ -1,0 +1,228 @@
+adattamento dei tipi di dato
+	stringa -> varchar
+	int -> integer
+	int>0 -> create domain intgz as integer
+				check value > 0
+
+	int>=0 -> create domain intgez as integer
+				check value >= 0
+
+	0..100 -> create domain ztc as integer
+				check 0 <= value <= 100
+
+	bool -> boolean
+	float  -> reale 
+	float >= 0 -> create domain realegz as reale
+					check value >= 0
+
+	float > 0 -> create domain realegz as reale
+					check value > 0
+
+	CFT -> create domain CFT as varchar
+				check value is like %regex$%/)%
+
+	IBAN-> create domain IBAN as varchar
+				check value is like %regex$%/)%
+
+	addr-> create type addr as (via: varchar, civico: intgz)
+
+	CCC-> create domain CCC as varchar
+				check value is like %regex$%/)%
+
+	TARGA -> create domain TARGA as varchar
+				check value is like %regex$%/)%
+
+	PC-> create domain PC as varchar
+				check value is like %regex$%/)%
+	date -> date
+	datetime -> dateTime
+
+	COORD-> create type coord as (x: intgez, y: intgez)
+
+	NUOVI:	
+
+	CREATE TYPE tipoconv AS ENUM ('perTipologia', 'perEco');
+
+	CREATE TYPE tipomodello AS ENUM ('ecocompatibile', 'tradizionale');
+
+	CREATE TYPE tipoSin AS ENUM ('conControparte', 'noControparte');
+
+	CREATE TYPE tipono AS ENUM ('completato', 'conSinistro');
+
+	CREATE TYPE tipoSocioa AS ENUM ('privato', 'dipendente')
+
+	operazioni di classe:
+
+	create function as luogo(): COORD
+		controlla che il modulo gps non sia rotto
+		se rotto, solleva errore
+		altrimenti:
+		geolocalizza l'auto tramite gps
+
+	create function as coord(): COORD
+		controlla che il modulo gps non sia rotto
+		se rotto, solleva errore
+		altrimenti:
+		geolocalizza l'auto tramite gps
+
+	create function as abituale(s: socio): boolean
+		Q = select sum(calcolaTempo(n)) as conto
+			from Noleggio as n 
+			where n.tipo = 'terminato'
+		if Q.conto >= 60 and s.tipo = 'privato'{
+			return true
+		} 
+		if Q.conto >= 100 and s.tipo = 'dipendente'{
+			return true
+		}
+		else{
+			return false
+		}
+
+	create function calcolaTempo(n: intgz): interval
+		controlla che n sia un noleggio
+		se non è un noleggio -> solleva errore.
+		result = n.entrata - n.uscita
+
+	NUOVI VICOLI ESTERNI:
+	[V.CONVENZIONE.tipologia_se_solo_se_perTipologia]
+	ALL c,t Convenzione(c) and tipo(c,t) and 'perTipologia' <-> exist ti Tipologia(ti) and co_ti(c,t)
+
+	[V.NOLEGGIO.uscita_se_solo_se_terminato]
+	ALL n,t Noleggio(n) and tipo(n,t) and t = 'terminato' <-> exist u uscita(n,u)
+
+	[V.NOLEGGIO.sinistro_se_solo_se_conSinistro]
+	ALL n,t Noleggio(n) and tipo(n,t) and t = 'conSinistro' <-> exist s Sinistro(s) and no_si(n,s)
+
+	[V.SINISTRO.ragione_e_auto_se_solo_se_CONCONTROPARTE]
+	ALL s,t Sinistro(s) and tipo(s,t) and t = 'con controparte' <-> exist a,r ragione(s,r) and au_co(a,s)
+
+	[V.SOCIO.indirizzo_e_carta_se_solo_se_privato]
+	ALL s,t Socio(s) and tipo(s,t) and t = 'privato' <-> exist c,ci,i ci_pr(ci,s) and ca_pr(c,s) and indirizzo(s,i)
+
+	[V.SOCIO.azienda_se_solo_se_dipendente]
+	ALL d,t Socio(s) and tipo(s,t) and t = 'dipendente' <-> exist a az_di(a,s)
+
+	MODIFICATI:
+	[V.Socio.esisteRichiestaAccettata]
+	ALL s,p Socio(s) and Persona(p) and isas(p,s) -> Exist r,t pe_ri(p,r) and tipo(p,t) and t = 'accettata'
+
+	[V.Convenzione.no2eco]
+	ALL a Azienda(a) -> not exist c1,c2,t Convenzione(c1) and Convenzione(c2) and tipo(c1,t) aand tipo(c2,t) and t = 'Ecocompatibile' and az_co(a,c1) and az_co(a,c2)
+
+	ELIMINATI:
+	[V.Noleggio.entrata_primadi_Uscita]
+	IL RESTO DEI VINCOLI SONO RIMASTI INVARIATI
+
+<TRIGGERS:
+	
+	NUOVI VICOLI ESTERNI:
+	[V.CONVENZIONE.tipologia_se_solo_se_perTipologia]
+	inserimento in Convenzione
+	postoperazione
+	isValid = not Exist(select * 
+						from Convenzione as c
+						join co_ti on c.id = co_ti.convenzione
+						where c.tipo != 'per tipologia') 
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+	[V.NOLEGGIO.uscita_se_solo_se_terminato]
+	modifica noleggio
+	postoperazione
+	isValid = not Exist(select *
+						from Noleggio as n
+						where (n.tipo != terminato and n.uscita is null) or (n.tipo = terminato and n.uscita is null) 
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+	[V.NOLEGGIO.sinistro_se_solo_se_conSinistro]
+	modifica noleggio
+	postoperazione
+	isValid = not Exist(select *
+						from Noleggio as n
+						left outer join Sinistro as s on n.id = s.Noleggio
+						where (n.tipo = 'consinistro' and s.* is null) or (n.tipo != 'consinistro' and s.* is not null))
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+	[V.SINISTRO.ragione_e_auto_se_solo_se_CONCONTROPARTE]
+	inserimento in Sinistro
+	postoperazione
+	isValid = not Exis(select * 
+					   from Sinisto as s
+					   join auto as a on s.targa = a.targa and a.paese = s.paese
+					   where ((auto.* is null or s.ragione is null) and s.tipo = 'concontroparte') or ((auto.* is not null or s.ragione is not null) and s.tipo != 'concontroparte')
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+	[V.SOCIO.indirizzo_e_carta_se_solo_se_privato]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select * 
+						from Socio as s
+						left outer join CartaDiCredito as c on c.codice = s.cartaDiCredito
+						left outer join Città as ci on s.città = ci.id
+						where (s.tipo != 'privato' and s.indirizzo is not null or c.* is not null or ci.* is not null) or (s.tipo = 'privato' and s.indirizzo is null or c.* is null or ci.* is null))
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+	[V.SOCIO.azienda_se_solo_se_dipendente]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select * 
+						from Socio as s
+						left outer join Azienda as a on a.id = s.azienda
+						where (s.tipo != 'dipendente' and a.* is not null ) or (s.tipo = 'dipendente' and a.* is null ))
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+	[V.Socio.esisteRichiestaAccettata]
+
+
+	[V.Convenzione.no2eco]
+
+	[V.Convenzione.nonIntrecciare_tipo]
+
+	[V.Sinistro.VeicoloNonUrtaSeStesso]
+
+	[V.Noleggio.NonIntersecareNoleggiStessaAuto]
+
+    [V.Noleggio.NonIntersecareNoleggiStessaPersona]
+
+    [V.Socio.esisteRichiestaAccettata]
+
+	[V.Socio.Patente_nonScaduta]
+
+	[V.Sprivato.CartaDiCredito_nonScaduta] 
+>
