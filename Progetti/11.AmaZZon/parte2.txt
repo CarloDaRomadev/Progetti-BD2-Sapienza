@@ -35,3 +35,59 @@ addr -> create type addr as (via: varchar, civico: intgz)
 identificativo -> create domain identificativo as varchar
 					check value is like %regex%$)£/(=)
 
+operazioni di classe:
+	prezzo(carrello: intgz): Realegez
+		select sum(prezzolocal(p.id,ca_po.quantità))
+		from Carrello as c
+		join ca_po on c.id = ca_po.carrello
+		join Post as p on p.id = ca_po.post
+		where c.id = carrello
+
+	(aux)prezzolocal(p:intgz,q:intgz)
+		Q = select t.prezzo
+		from Post as po
+		join Tariffa as t on t.post = t.id
+		where po.id = p and 
+
+		if Q is not NULL{
+			return Q.prezzo + (select po.prezzo
+							   from Post as po
+							   where po.id = p
+								)
+		}
+		else
+		Q = select t.prezzo
+		from Post as po
+		join Tariffa as t on t.post = t.id
+		join Range as r on r.tariffa = Tariffa.id
+		where po.id = p and r.min < q < r.max
+
+		return Q.prezzo + (select po.prezzo
+							   from Post as po
+							   where po.id = p
+								)
+
+	fine(buac: intgz): date
+		Q = select ba.datai,b.durata
+		from BuonoAcquistato as ba
+		join Buono as b on ba.buono = b.id
+		where ba.id = buac
+
+	return (Q.datai + Q.durata)
+
+[T.Utente.IscrizionePrimaDiAcquisti]
+[T.Utente.Buono_dataiMaggioreIR]
+[T.Buono.inizioPrimaDiFine]
+[T.Range_piùCompriMenoSpendi]
+[T.Range.nonIntersecare]
+[T.NonEsistonoDueTariffePerLoStessoPaese]
+
+vincoli aggiunti:
+[V.Range_se_solo_se_tariffaComposta]
+[V.costo_se_solo_se_tariffaSemplice]
+
+i vincoli omessissi sono stati implementati tramite semplici check.
+
+paesePiùCompratore(i:date, f:date): Varchar[1..*]
+conveniente(c: varchar, t: varchar[1..*]): (varchar, realegez) [0..*]
+tendenza(): code[0..*]
