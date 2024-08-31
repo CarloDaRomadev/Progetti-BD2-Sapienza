@@ -115,9 +115,9 @@ specifica use-case
 				a | abituale(s,a)
 				n = sommatoria{c | EXIST n,sm,e,u NoleggioTerminato(n) and no_sm(n,sm) and sm_so(sm,s) and entrata(n,e) and uscita(n,u) and i < e < f and i < u < f and costo(n,s,c)}
 				
-				c < 2 -> nn = n - (n * 0,1)
+				cl < 2 -> nn = n - (n * 0,1)
 				and
-				c >= 5 -> nn = (n * (c*0,1)
+				cl >= 5 -> nn = (n * (c*0,1)
 				and
 				nn = n
 
@@ -128,7 +128,7 @@ specifica use-case
 				result = nnn
 
 	AUSILIARIA 
-		costo(n: NoleggioTerminato, s: Socio): float >= 0
+		costo(n: NoleggioTerminato): float >= 0
 		precondizioni:
 			nessuna
 		postcondizioni:

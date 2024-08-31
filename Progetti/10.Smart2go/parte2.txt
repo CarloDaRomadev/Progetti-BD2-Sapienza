@@ -114,7 +114,7 @@ adattamento dei tipi di dato
 	[V.Noleggio.entrata_primadi_Uscita]
 	IL RESTO DEI VINCOLI SONO RIMASTI INVARIATI
 
-<TRIGGERS:
+TRIGGERS:
 	
 	NUOVI VICOLI ESTERNI:
 	[V.CONVENZIONE.tipologia_se_solo_se_perTipologia]
@@ -208,21 +208,139 @@ adattamento dei tipi di dato
 	}
 
 	[V.Socio.esisteRichiestaAccettata]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select *
+						from Socio as s
+						join Persona as p on s.persona = p.cf 
+						join Richiesta as r on r.id = p.Richiesta
+						where r.* is null or r.tipo = 'rifiutata')
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
 
 
 	[V.Convenzione.no2eco]
+	inserimento in Convenzione
+	postoperazione
+	isValid = not Exist(select *
+						from Convenzione as c1, Convenzione as c2, Azienda as a
+						join az_co on a.id = az_co.azienda
+						join az_co as az_co2 on az_co2.azienda = a.id 
+						where c1.id != c2.id and c1.tipo = c2.tipo and c1.tipo = 'Ecocompatibile' and az_co.convenzione = c1.id and az_co2.convenzione = c2.id)
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback, genera errore
+	}
 
 	[V.Convenzione.nonIntrecciare_tipo]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select *
+						from Convenzione as c1, Convenzione as c2
+						join co_ti on c1.id = co_ti.convenzione
+						join co_ti as co_ti2 on c2.id = co_ti.convenzione
+						join az_co on az_co.convenzione = c1.dipendente
+						join az_co as az_co2 on az_co2.convezione = c2.dipendente
+						where co_ti.Tipologia = co_ti2.tipologia and az_co.azienda = az_co2.azienda
+						)
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback, solleva errore
+	}
+
 
 	[V.Sinistro.VeicoloNonUrtaSeStesso]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select *
+						from AutoSistema as as
+						join Auto as a on as.targa = a.targa and as.nazione = a.nazione
+						join Noleggio as n on n.AutoSistema = as.id
+						join Sinisto as s on s.noleggio = n.id
+						join Auto as aUrtata on s.auto = aUrtata.id
+ 						where aUrtata.targa = a.targa and a.nazione = aUrtata.nazione)
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback, solleva errore
+	}
+
 
 	[V.Noleggio.NonIntersecareNoleggiStessaAuto]
+	inserimento in noleggio
+	postoperazione
+	isValid = not Exist(select *
+						from Noleggio as n1, Noleggio as n2
+						where (n1.autoSistema = n2.autoSistema) and (n1.entrata < n2.entrata and n1.uscita > n2.uscita)
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback, solleva errore
+	}
+
 
     [V.Noleggio.NonIntersecareNoleggiStessaPersona]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select *
+						from Noleggio as n1, Noleggio as n2
+						join no_sm on n1.id = no_sm.noleggio
+						join no_sm as no_sm2 on n2.id = no_sm2.noleggio
+						where (no_sm.smartCard = no_sm2.smartCard) and (n1.entrata < n2.entrata and n1.uscita > n2.uscita)
 
-    [V.Socio.esisteRichiestaAccettata]
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
 
 	[V.Socio.Patente_nonScaduta]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select *
+						from Patente as p
+						where p.scadenza < now())
 
-	[V.Sprivato.CartaDiCredito_nonScaduta] 
->
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+
+	[V.Sprivato.CartaDiCredito_nonScaduta]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select *
+						from CartaDiCredito as p
+						where p.scadenza < now())
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+operazioni use-case{
+	
+	costo
+}

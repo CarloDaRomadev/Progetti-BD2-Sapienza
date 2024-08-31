@@ -1,0 +1,42 @@
+AMAZZON{
+	negozio:
+		nome
+		indirizzosede
+		mail [1..*]
+		numero [0..*]
+		costi spedizione paese per prodotto
+			fascie prezzo se acquisti più prodotti dello stesso tipo
+
+	articolo:
+		nome
+		descrizione
+		marca
+		numero modello
+		categoria
+		tag[1..*]
+
+	buono regalo:
+		acquirente
+		importo
+		periodo validità
+
+	utente
+		amici
+		nome
+		istante registrazione
+		carte 
+
+	carta
+		titolare
+		codice (numero 16 cifre)
+		data scadenza
+
+	wish list
+		pubblica
+		privata
+
+		nome
+		oggetti
+		proprietario
+
+}

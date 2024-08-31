@@ -1,0 +1,1 @@
+coord non può essere trovato con una operazione, bisogna creare una classe a parte.

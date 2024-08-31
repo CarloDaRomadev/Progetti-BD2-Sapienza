@@ -1,0 +1,37 @@
+//Cambio dei tipi di dato per adatatamento al dbms (postgresSql)
+nuovi:
+	tipot = create type tipot as enum('composta', 'semplice')
+	tipoW = create type tipoW as enum('pubblica', 'privata')
+dataOra -> dateTime
+data -> date
+float -> reale
+float > 0 -> create domain floatgz as float
+				check value > 0 
+
+float >= 0 -> create domain floatgez as float
+				check value >= 0 
+
+int -> integer
+int > 0 -> create domain intgz as integer
+				check value > 0 
+
+int >= 0 -> create domain intgez as integer
+				check value >= 0 
+
+stringa -> varchar
+bool -> boolean
+tipoDurata -> interval
+cc -> create domain identificativo as varchar
+					check value is like %regex%$)£/(=)
+
+maddr -> create domain identificativo as varchar
+					check value is like %regex%$)£/(=)
+
+num -> create domain identificativo as varchar
+					check value is like %regex%$)£/(=)
+
+addr -> create type addr as (via: varchar, civico: intgz)
+
+identificativo -> create domain identificativo as varchar
+					check value is like %regex%$)£/(=)
+

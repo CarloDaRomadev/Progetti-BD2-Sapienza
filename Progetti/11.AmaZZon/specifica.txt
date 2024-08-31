@@ -1,0 +1,190 @@
+specifica tipi di dato:
+	cc: stringa numerica di 16 caratteri
+	num: stringa numerica secondo standard
+	addr: {strada: stringa, civico: int>0}
+	maddr: stringa secondo regex
+	identificativo: stringa secondo standard
+	tipoDurata: {anni: int>=0, mesi: int>=0, giorni: int>=0}
+
+specifica classe Carrello:
+	operazioni:
+		prezzo():
+			preCondizioni:
+				nessuna
+			postCondizioni:
+				C = {c | exist p,q ca_po(.this,p) and quantità(.this,p,q) and prezzoLocal(p,q,c)}
+				result = sommatoria su C
+
+		prezzoLocal(p:Post,q:int>0):
+			preCondizioni:	
+				nessuna
+			postCondizioni:
+				c | costo(p,c)
+				t | po_ta(p,t)
+				Semplice(t) -> 
+					s | costo(t,s)
+					result = s + (c*q)
+				and 
+					r | exist m,M po_ta(p,t) and co_ra(t,r) and min(r,m) and max(r,M) and (m < q < M)
+					s | costo(r,s)
+					result = s + (c*q)
+
+specifica classe Post:
+	vincoli esterni:
+	[V.NonEsistonoDueTariffePerLoStessoPaese]
+	ALL p,t,pa
+		po_ta(p,t) and pa_ta(pa,t) -> NOT EXIST t2 po_ta(p,t2) and pa_ta(pa,t2)
+
+	[V.inizioPrimaDiFine]
+	ALL i,f,p
+		Post(p) and inizio(p,i) and fine(p,f) ->
+			i < f
+
+specifica classe Range:
+	vincoli esterni:
+	[V.Range.maxMaggioreMin]
+	ALL m,M,r
+		Range(r) and max(r,M) and min(r,m) -> m < M 
+
+	[V.Range.nonIntersecare]
+	ALL m,M,r,r2,m2,M2,c
+		co_ra(c,r) and co_ra(c,r2) and min(r,m) and min(r2,m2) and max(r,M) and max(r2,M2) -> m > M2 or M > m2
+
+	[v.Range_piùCompriMenoSpendi]
+	ALL r,m,c,r2,m2,c2
+		Range(r) and max(r,m) and costo(r,c) and max(r2,m2) and costo(r2,c2) and m > m2 -> c2 < c 
+
+specifica classe Buono:
+	operazioni: 
+		fine(): date
+		preCondizioni:
+			nessuna
+		postCondizioni:
+			d | exist b bu_bua(b,.this) and durata(b,d)
+			di | datai(.this,di)
+		dataf = di + d
+		result = dataf
+
+	vincoli esterni:
+	[V.Buono.inizioPrimaDiFine]
+	ALL b,i,f
+		Buono(b) and datai(b,i) and dataf(b,f) -> i < f
+
+specifica Classe Utente:
+	vincoli esterni:
+	[V.Utente.Buono_dataiMaggioreIR]
+	ALL u,i,b,di,d
+		Buono(b) and bu_ut(b,u) and ir(u,i) and date(i,d) and datai(b,di) -> d <= di
+
+	[V.Utente.NotAmicoConSeStesso]
+	ALL u
+		Utente(u) -> NOT amicizia(u,u)
+
+	[V.Utente.IscrizionePrimaDiAcquisti]
+	ALL u,c,a,t,i
+		ir(u,i) and ca_ut(c,u) and ac_ca(a,c) and tempo(a,t) -> t > i
+
+specifica use-case:
+	use-case registrazione:
+		registrati(n: stringa): Utente
+
+	use-case aggiungi Carte:
+		aggiungi(t: stringa, c:cc, d: date): Carta
+
+	use-case acquista:
+		creaCarrello(): Carrello
+		aggiungiACarrello(c: Carrello, post: Post, t: Tariffa, Quantità: int > 0)
+		procediAll'acquisto(c: Carrello, b:Buono[0..*]): Acquisto
+		totaleCarrello(c: Carrello): float >= 0
+		acquistaBuono(b:Buono): BuonoAcquistato
+
+	use-case Navigazione
+		naviga(): Articolo[0..*]
+		dettagli(a: Articolo): int,cc,strigna,identificativo,Tag[1..*],Categoria
+		prezzo(a:Articolo): float>=0
+
+	use-case wishlist Amici
+		guarda(a: Utente): wishlist[0..*]
+
+	use-case Amicizie
+		invia(u: Utente): Amicizia
+		accetta(a: Amicizia)
+
+	use-case strumenti wishlist
+		creaPubblica(n:nome)
+		creaPrivata(n:nome)
+		aggiungiArticolo(a: Articolo, w: Wishlist)
+
+	use-case segnalaErrore
+		segnala(a: Articolo)
+
+	use-case segnalazione
+		segnalaAbbassamentoPrezzoArticoloInWishlist(u: Utente)
+
+	use-case AggiungiArticolo
+		aggiungi(n: stringa, codice: identificativo, descrizione: stringa, numeroM : int>0[0..1], t: Tag[1..*], c: Categoria): Articolo
+
+	use-case PubblicaPost
+		pubblica(a: Articolo, prezzo: float>= 0, i:date, f: date): Post
+
+	use-case crea/modificaPrezziSpedizione
+		creaSemplice(p: Post, pa: Paese, pre: float >= 0): Semplice
+		creaComposta(p: Post): Composta
+		aggiungiAComposta(m: int>=0, M: int>=0, c: float >= 0): Range
+
+	use-case stats:
+
+
+		paesePiùCompratore(i:date, f:date): Paese[1..*]
+		preCondizioni: 
+			i<f
+		postCondizioni:
+			P = {(p,n) | Paese(p) and tot_acquisti_paese_dato_periodo(p,i,f,n)}
+			p | (p,n) in P and not exist (p2,n2) (p2,n2) in P and n2 > n
+			result = p
+
+	(aux)
+		tot_acquisti_paese_dato_periodo(p:paese,i:date,f:date)
+		preCondizioni:
+			i<f
+		postCondizioni:
+			C = {c | exist a,ca,u,t,d
+				    pa_ut(p,u) and ca_ut(ca,u) and ac_ca(a,ca) and tempo(a,t) and i < t < f}
+			result = |C|
+
+-------------------------------
+
+
+		conveniente(c: Categoria, t: Tag[1..*]): (Articolo,float >= 0) [0..*]
+		preCondizioni:
+			nessuna
+		postCondizioni:
+			result = {(a,i) | ar_ca(a,c) and ar_ta(a,t) and convenienteLocal(a,i)} 
+
+	(aux)
+		convenienteLocal(a: Articolo): float>=0
+		preCondizioni:
+			Exist p,d ar_po(a,p) and disponibile(p,d) and d = TRUE
+		postCondizioni:
+			C = {c | exist p,t,cos ar_po(a,p) and minta(p,t) and costo(p,cos) c = cos+t}
+
+	(aux)
+		minta(p: Post): float >= 0
+		preCondizioni:
+			nessuna
+		postCondizioni:
+			C = {c | exist s po_ta(p,s) and Semplice(s) and prezzo(s,c)}
+			CC = {cc | exist r,comp po_ta(p,comp) and Composta(p, comp) and co_ra(comp,r) and costo(comp,cc)}
+			c1 | c1 in C and not exist c2 c2 in C and c2 < c1
+			cc1 | cc1 in CC AND not exist cc2 cc2 in CC AND cc2 < cc1
+			c1 < cc1 -> result = c1
+			and
+			result = cc1
+------------------------------
+
+
+		tendenza(): Articolo[0..*]
+		preCondizioni:
+			nessuna
+		postCondizioni:
+[...]
