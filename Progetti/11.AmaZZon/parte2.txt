@@ -75,16 +75,35 @@ operazioni di classe:
 
 	return (Q.datai + Q.durata)
 
-[T.Utente.IscrizionePrimaDiAcquisti]
+[T.Utente.IscrizionePrimaDiAcquisti] à
+inserimento in acquisto
+is valid = not exist (select *
+					  from Utente as u
+					  join Carello as c on u.id = c.utente
+					  join Acquisto as a on c.id = a.carrello
+					  where a.tempo < u.ir
+					 ) 
+if is valid == TRUE{
+	continue
+}
+else{
+	rollback
+}
+
 [T.Utente.Buono_dataiMaggioreIR]
 [T.Buono.inizioPrimaDiFine]
 [T.Range_piùCompriMenoSpendi]
 [T.Range.nonIntersecare]
 [T.NonEsistonoDueTariffePerLoStessoPaese]
+[T.Range_se_solo_se_tariffaComposta]
+[T.costo_se_solo_se_tariffaSemplice]
 
 vincoli aggiunti:
 [V.Range_se_solo_se_tariffaComposta]
+ALL t Tariffa(t) and Composta(t) <-> Exist Range(r) and co_ra(c,r)
+
 [V.costo_se_solo_se_tariffaSemplice]
+ALL t Tariffa(t) and Semplice(t) <-> Exist c Costo(t,c)
 
 i vincoli omessissi sono stati implementati tramite semplici check.
 
