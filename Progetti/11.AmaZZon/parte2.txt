@@ -75,8 +75,9 @@ operazioni di classe:
 
 	return (Q.datai + Q.durata)
 
-[T.Utente.IscrizionePrimaDiAcquisti] à
+[T.Utente.IscrizionePrimaDiAcquisti]
 inserimento in acquisto
+postoperazione
 is valid = not exist (select *
 					  from Utente as u
 					  join Carello as c on u.id = c.utente
@@ -91,22 +92,104 @@ else{
 }
 
 [T.Utente.Buono_dataiMaggioreIR]
+inserimento in buonoAcquistato
+postoperazione 
+is valid = not exist (select *
+					  from Utente as u
+					  join BuonoAcquistato as a on a.utente = u.id
+					  where u.ir > a.datai
+					 )
+if is valid == TRUE{
+	continue
+}
+else{
+	rollback
+}
+
 [T.Buono.inizioPrimaDiFine]
+inserimento in buonoAcquistato
+postOperazione
+is valid = not exist (select*
+					  from Buono as b
+					  where (fine(b)) > b.datai
+					  )
+if is valid == TRUE{
+	Continue
+}
+else{
+	rollback                                                   //chiedi.............................................................
+}
+
+
 [T.Range_piùCompriMenoSpendi]
+inseriemento in Range
+postOperazione
+isValid = not exist (select*
+					 from Range as r1, Range as r2
+					 join Tariffa as t on (t.id = r1.tariffa) and (t.id = r2.tariffa)
+					 where r1.min > r2.max and r1.prezzo > r2.max)
+if isValid == TRUE{
+		continue
+} 
+else{
+	rollback
+}
+
 [T.Range.nonIntersecare]
+inserimento in Range
+postOPerazione
+isValid = not exist (select*
+					 from Range as r1, Range as r2
+					 where r1.min < r2.min and r1.max > r2.max
+					)
+if isValid == TRUE{
+	continue
+}
+else{
+	rollback
+}
+
 [T.NonEsistonoDueTariffePerLoStessoPaese]
+inseriemento in Tariffa
+postOperazione		
+					(select *
+					 from Tariffa as t1, Tariffa as t2
+					 where t1.post = t2.ppost and t1.paese = t2.paese and t1.id != t2.id)
+if isValid == TRUE{
+	continue
+}
+else{
+	rollback
+}
+
 [T.Range_se_solo_se_tariffaComposta]
+inserimento in tariffa 
+postOperazione
+				(select * 
+				 from Tariffa as t 
+				 left outer join Range as r on r.tariffa = t.id			
+				 where t.tipo = 'Composta' and r.* = null or t.tipo = 'Semplice' and r.* is not null 																											
+				 )
+
+
 [T.costo_se_solo_se_tariffaSemplice]
+inserimento in tariffa
+postOperazione
+				(select *
+				from Tariffa as t
+				where (t.prezzo is null and t.tipo = 'Semplice') or (t.prezzo is not null and t.tipo = 'Composto'))
 
 vincoli aggiunti:
 [V.Range_se_solo_se_tariffaComposta]
-ALL t Tariffa(t) and Composta(t) <-> Exist Range(r) and co_ra(c,r)
+ALL t Tariffa(t) and Composta(t) <-> Exist r Range(r) and co_ra(c,r)
 
 [V.costo_se_solo_se_tariffaSemplice]
 ALL t Tariffa(t) and Semplice(t) <-> Exist c Costo(t,c)
 
-i vincoli omessissi sono stati implementati tramite semplici check.
+i vincoli omessi sono stati implementati tramite semplici check.
 
 paesePiùCompratore(i:date, f:date): Varchar[1..*]
+select count(a.paese)
+
 conveniente(c: varchar, t: varchar[1..*]): (varchar, realegez) [0..*]
 tendenza(): code[0..*]
