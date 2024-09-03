@@ -1,80 +1,97 @@
-//Cambio dei tipi di dato per adatatamento al dbms (postgresSql)
-nuovi:
-	tipot = create type tipot as enum('composta', 'semplice')
-	tipoW = create type tipoW as enum('pubblica', 'privata')
-dataOra -> dateTime
-data -> date
-float -> reale
-float > 0 -> create domain floatgz as float
-				check value > 0 
+adattamento dei tipi di dato
+	stringa -> varchar
+	int -> integer
+	int>0 -> create domain intgz as integer
+				check value > 0
 
-float >= 0 -> create domain floatgez as float
-				check value >= 0 
+	int>=0 -> create domain intgez as integer
+				check value >= 0
 
-int -> integer
-int > 0 -> create domain intgz as integer
-				check value > 0 
+	0..100 -> create domain ztc as integer
+				check 0 <= value <= 100
 
-int >= 0 -> create domain intgez as integer
-				check value >= 0 
+	bool -> boolean
+	float  -> reale 
+	float >= 0 -> create domain realegz as reale
+					check value >= 0
 
-stringa -> varchar
-bool -> boolean
-tipoDurata -> interval
-cc -> create domain identificativo as varchar
-					check value is like %regex%$)£/(=)
+	float > 0 -> create domain realegz as reale
+					check value > 0
 
-maddr -> create domain identificativo as varchar
-					check value is like %regex%$)£/(=)
+	CFT -> create domain CFT as varchar
+				check value is like %regex$%/)%
 
-num -> create domain identificativo as varchar
-					check value is like %regex%$)£/(=)
+	IBAN-> create domain IBAN as varchar
+				check value is like %regex$%/)%
 
-addr -> create type addr as (via: varchar, civico: intgz)
+	addr-> create type addr as (via: varchar, civico: intgz)
 
-identificativo -> create domain identificativo as varchar
-					check value is like %regex%$)£/(=)
+	CCC-> create domain CCC as varchar
+				check value is like %regex$%/)%
 
-operazioni di classe:
-	prezzo(carrello: intgz): Realegez
-		select sum(prezzolocal(p.id,ca_po.quantità))
-		from Carrello as c
-		join ca_po on c.id = ca_po.carrello
-		join Post as p on p.id = ca_po.post
-		where c.id = carrello
+	TARGA -> create domain TARGA as varchar
+				check value is like %regex$%/)%
 
-	(aux)prezzolocal(p:intgz,q:intgz)
-		Q = select t.prezzo
-		from Post as po
-		join Tariffa as t on t.post = t.id
-		where po.id = p and 
+	PC-> create domain PC as varchar
+				check value is like %regex$%/)%
+	date -> date
+	datetime -> dateTime
 
-		if Q is not NULL{
-			return Q.prezzo + (select po.prezzo
-							   from Post as po
-							   where po.id = p
-								)
+	COORD-> create type coord as (x: intgez, y: intgez)
+
+	NUOVI:	
+
+	CREATE TYPE tipoconv AS ENUM ('perTipologia', 'perEco');
+
+	CREATE TYPE tipomodello AS ENUM ('ecocompatibile', 'tradizionale');
+
+	CREATE TYPE tipoSin AS ENUM ('conControparte', 'noControparte');
+
+	CREATE TYPE tipono AS ENUM ('completato', 'conSinistro');
+
+	CREATE TYPE tipoSocioa AS ENUM ('privato', 'dipendente')
+
+	operazioni di classe:
+
+	create function as luogo(): COORD
+		controlla che il modulo gps non sia rotto
+		se rotto, solleva errore
+		altrimenti:
+		geolocalizza l'auto tramite gps
+
+	create function as coord(): COORD
+		controlla che il modulo gps non sia rotto
+		se rotto, solleva errore
+		altrimenti:
+		geolocalizza l'auto tramite gps
+
+	create function as abituale(s: socio): boolean
+		Q = select sum(calcolaTempo(n)) as conto
+			from Noleggio as n 
+			where n.tipo = 'terminato'
+		if Q.conto >= 60 and s.tipo = 'privato'{
+			return true
+		} 
+		if Q.conto >= 100 and s.tipo = 'dipendente'{
+			return true
 		}
-		else
-		Q = select t.prezzo
-		from Post as po
-		join Tariffa as t on t.post = t.id
-		join Range as r on r.tariffa = Tariffa.id
-		where po.id = p and r.min < q < r.max
+		else{
+			return false
+		}
 
-		return Q.prezzo + (select po.prezzo
-							   from Post as po
-							   where po.id = p
-								)
+	create function calcolaTempo(n: intgz): interval
+		controlla che n sia un noleggio
+		se non è un noleggio -> solleva errore.
+		result = n.entrata - n.uscita
 
-	fine(buac: intgz): date
-		Q = select ba.datai,b.durata
-		from BuonoAcquistato as ba
-		join Buono as b on ba.buono = b.id
-		where ba.id = buac
+	NUOVI VICOLI ESTERNI:
+	[V.CONVENZIONE.tipologia_se_solo_se_perTipologia]
+	ALL c,t Convenzione(c) and tipo(c,t) and 'perTipologia' <-> exist ti Tipologia(ti) and co_ti(c,t)
 
-	return (Q.datai + Q.durata)
+	[V.NOLEGGIO.uscita_se_solo_se_terminato]
+	ALL n,t Noleggio(n) and tipo(n,t) and t = 'terminato' <-> exist u uscita(n,u)
 
+<<<<<<< Updated upstream
 [T.Utente.IscrizionePrimaDiAcquisti]
 inserimento in acquisto
 postoperazione
@@ -193,3 +210,258 @@ select count(a.paese)
 
 conveniente(c: varchar, t: varchar[1..*]): (varchar, realegez) [0..*]
 tendenza(): code[0..*]
+=======
+	[V.NOLEGGIO.sinistro_se_solo_se_conSinistro]
+	ALL n,t Noleggio(n) and tipo(n,t) and t = 'conSinistro' <-> exist s Sinistro(s) and no_si(n,s)
+
+	[V.SINISTRO.ragione_e_auto_se_solo_se_CONCONTROPARTE]
+	ALL s,t Sinistro(s) and tipo(s,t) and t = 'con controparte' <-> exist a,r ragione(s,r) and au_co(a,s)
+
+	[V.SOCIO.indirizzo_e_carta_se_solo_se_privato]
+	ALL s,t Socio(s) and tipo(s,t) and t = 'privato' <-> exist c,ci,i ci_pr(ci,s) and ca_pr(c,s) and indirizzo(s,i)
+
+	[V.SOCIO.azienda_se_solo_se_dipendente]
+	ALL d,t Socio(s) and tipo(s,t) and t = 'dipendente' <-> exist a az_di(a,s)
+
+	MODIFICATI:
+	[V.Socio.esisteRichiestaAccettata]
+	ALL s,p Socio(s) and Persona(p) and isas(p,s) -> Exist r,t pe_ri(p,r) and tipo(p,t) and t = 'accettata'
+
+	[V.Convenzione.no2eco]
+	ALL a Azienda(a) -> not exist c1,c2,t Convenzione(c1) and Convenzione(c2) and tipo(c1,t) aand tipo(c2,t) and t = 'Ecocompatibile' and az_co(a,c1) and az_co(a,c2)
+
+	ELIMINATI:
+	[V.Noleggio.entrata_primadi_Uscita]
+	IL RESTO DEI VINCOLI SONO RIMASTI INVARIATI
+
+TRIGGERS:
+	
+	NUOVI VICOLI ESTERNI:
+	[V.CONVENZIONE.tipologia_se_solo_se_perTipologia]
+	inserimento in Convenzione
+	postoperazione
+	isValid = not Exist(select * 
+						from Convenzione as c
+						join co_ti on c.id = co_ti.convenzione
+						where c.tipo != 'per tipologia') 
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+	[V.NOLEGGIO.uscita_se_solo_se_terminato]
+	modifica noleggio
+	postoperazione
+	isValid = not Exist(select *
+						from Noleggio as n
+						where (n.tipo != terminato and n.uscita is null) or (n.tipo = terminato and n.uscita is null) 
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+	[V.NOLEGGIO.sinistro_se_solo_se_conSinistro]
+	modifica noleggio
+	postoperazione
+	isValid = not Exist(select *
+						from Noleggio as n
+						left outer join Sinistro as s on n.id = s.Noleggio
+						where (n.tipo = 'consinistro' and s.* is null) or (n.tipo != 'consinistro' and s.* is not null))
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+	[V.SINISTRO.ragione_e_auto_se_solo_se_CONCONTROPARTE]
+	inserimento in Sinistro
+	postoperazione
+	isValid = not Exis(select * 
+					   from Sinisto as s
+					   join auto as a on s.targa = a.targa and a.paese = s.paese
+					   where ((auto.* is null or s.ragione is null) and s.tipo = 'concontroparte') or ((auto.* is not null or s.ragione is not null) and s.tipo != 'concontroparte')
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+	[V.SOCIO.indirizzo_e_carta_se_solo_se_privato]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select * 
+						from Socio as s
+						left outer join CartaDiCredito as c on c.codice = s.cartaDiCredito
+						left outer join Città as ci on s.città = ci.id
+						where (s.tipo != 'privato' and s.indirizzo is not null or c.* is not null or ci.* is not null) or (s.tipo = 'privato' and s.indirizzo is null or c.* is null or ci.* is null))
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+	[V.SOCIO.azienda_se_solo_se_dipendente]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select * 
+						from Socio as s
+						left outer join Azienda as a on a.id = s.azienda
+						where (s.tipo != 'dipendente' and a.* is not null ) or (s.tipo = 'dipendente' and a.* is null ))
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+	[V.Socio.esisteRichiestaAccettata]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select *
+						from Socio as s
+						join Persona as p on s.persona = p.cf 
+						join Richiesta as r on r.id = p.Richiesta
+						where r.* is null or r.tipo = 'rifiutata')
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+
+	[V.Convenzione.no2eco]
+	inserimento in Convenzione
+	postoperazione
+	isValid = not Exist(select *
+						from Convenzione as c1, Convenzione as c2, Azienda as a
+						join az_co on a.id = az_co.azienda
+						join az_co as az_co2 on az_co2.azienda = a.id 
+						where c1.id != c2.id and c1.tipo = c2.tipo and c1.tipo = 'Ecocompatibile' and az_co.convenzione = c1.id and az_co2.convenzione = c2.id)
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback, genera errore
+	}
+
+	[V.Convenzione.nonIntrecciare_tipo]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select *
+						from Convenzione as c1, Convenzione as c2
+						join co_ti on c1.id = co_ti.convenzione
+						join co_ti as co_ti2 on c2.id = co_ti.convenzione
+						join az_co on az_co.convenzione = c1.dipendente
+						join az_co as az_co2 on az_co2.convezione = c2.dipendente
+						where co_ti.Tipologia = co_ti2.tipologia and az_co.azienda = az_co2.azienda
+						)
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback, solleva errore
+	}
+
+
+	[V.Sinistro.VeicoloNonUrtaSeStesso]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select *
+						from AutoSistema as as
+						join Auto as a on as.targa = a.targa and as.nazione = a.nazione
+						join Noleggio as n on n.AutoSistema = as.id
+						join Sinisto as s on s.noleggio = n.id
+						join Auto as aUrtata on s.auto = aUrtata.id
+ 						where aUrtata.targa = a.targa and a.nazione = aUrtata.nazione)
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback, solleva errore
+	}
+
+
+	[V.Noleggio.NonIntersecareNoleggiStessaAuto]
+	inserimento in noleggio
+	postoperazione
+	isValid = not Exist(select *
+						from Noleggio as n1, Noleggio as n2
+						where (n1.autoSistema = n2.autoSistema) and (n1.entrata < n2.entrata and n1.uscita > n2.uscita)
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback, solleva errore
+	}
+
+
+    [V.Noleggio.NonIntersecareNoleggiStessaPersona]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select *
+						from Noleggio as n1, Noleggio as n2
+						join no_sm on n1.id = no_sm.noleggio
+						join no_sm as no_sm2 on n2.id = no_sm2.noleggio
+						where (no_sm.smartCard = no_sm2.smartCard) and (n1.entrata < n2.entrata and n1.uscita > n2.uscita)
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+
+	[V.Socio.Patente_nonScaduta]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select *
+						from Patente as p
+						where p.scadenza < now())
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+
+	[V.Sprivato.CartaDiCredito_nonScaduta]
+	inserimento in Socio
+	postoperazione
+	isValid = not Exist(select *
+						from CartaDiCredito as p
+						where p.scadenza < now())
+
+	if isValid{
+		continue
+	}
+	else{
+		rollback
+	}
+
+operazioni use-case{
+	
+	costo
+}
+>>>>>>> Stashed changes
