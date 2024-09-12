@@ -140,8 +140,8 @@ specifica use-case:
 			i<f
 		postCondizioni:
 			P = {(p,n) | Paese(p) and tot_acquisti_paese_dato_periodo(p,i,f,n)}
-			p | (p,n) in P and not exist (p2,n2) (p2,n2) in P and n2 > n
-			result = p
+			result = argmax(n) 
+					(p,n) in P
 
 	(aux)
 		tot_acquisti_paese_dato_periodo(p:paese,i:date,f:date)
