@@ -1,5 +1,5 @@
-[![SQL](https://img.shields.io/badge/language-SQL-blue)](./sql/)
-![UML](https://img.shields.io/badge/design-UML-purple)
+[![SQL](https://img.shields.io/badge/language-SQL-blue)](./esercizi/)
+[![UML](https://img.shields.io/badge/design-UML-purple)](./Progetti/)
 
 # Raccolta personale di progetti svolti per preparazione esame "Base di dati (2'modulo)"
 
