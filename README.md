@@ -17,7 +17,7 @@ Il materiale copre diversi aspetti fondamentali della progettazione e gestione d
 
 # Argomenti coperti:
 
-- Modellazione concettuale e logica tramite **UML** e **diagrammi E-R**;
+- Modellazione concettuale e logica tramite **UML**;
 - Progettazione e implementazione di schemi SQL complessi;
 - Ottimizzazione e gestione delle query SQL;
 - Utilizzo di strumenti professionali quali **pgAdmin** per la gestione di database PostgreSQL;
