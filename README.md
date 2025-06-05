@@ -1,10 +1,11 @@
+# Progetti-BD2
+
 [![Software Engineering](https://img.shields.io/badge/domain-Software%20Engineering-lightgrey)]()
 [![FOL](https://img.shields.io/badge/topic-First--Order%20Logic-yellow)](https://en.wikipedia.org/wiki/First-order_logic)
 [![SQL](https://img.shields.io/badge/language-SQL-blue)](./esercizi/)
 [![UML](https://img.shields.io/badge/design-UML-purple)](./Progetti/)
 [![pgAdmin](https://img.shields.io/badge/tool-pgAdmin-336791?logo=postgresql)](https://www.pgadmin.org/)
 [![Visual Paradigm](https://img.shields.io/badge/tool-Visual%20Paradigm-darkblue)](https://www.visual-paradigm.com/)
-
 
 # Raccolta personale di progetti svolti per preparazione esame "Base di dati (2'modulo)"
 
