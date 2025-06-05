@@ -1,4 +1,4 @@
-# Progetti-BD2
+# Progetti-BD2-Sapienza
 
 [![Software Engineering](https://img.shields.io/badge/domain-Software%20Engineering-lightgrey)]()
 [![FOL](https://img.shields.io/badge/topic-First--Order%20Logic-yellow)](https://en.wikipedia.org/wiki/First-order_logic)
@@ -7,11 +7,44 @@
 [![pgAdmin](https://img.shields.io/badge/tool-pgAdmin-336791?logo=postgresql)](https://www.pgadmin.org/)
 [![Visual Paradigm](https://img.shields.io/badge/tool-Visual%20Paradigm-darkblue)](https://www.visual-paradigm.com/)
 
-# Raccolta personale di progetti svolti per preparazione esame "Base di dati (2'modulo)"
+---
 
-![main-qimg-c863d5b333a5ff6b17df9675e6d1f1f5-c](https://github.com/user-attachments/assets/0ddf0db7-2990-4334-8d4f-68235e64bd9f)
+## Descrizione
 
-# Formule utili per il corso:
+**Progetti-BD2** è una raccolta personale di progetti e esercizi svolti per la preparazione all’esame di **Base di Dati 2° modulo**. 
+
+Il materiale copre diversi aspetti fondamentali della progettazione e gestione di basi di dati, questo è stato sviluppato per uso personale, può quindi contenere errori:
+
+# Argomenti coperti:
+
+- Modellazione concettuale e logica tramite **UML** e **diagrammi E-R**;
+- Progettazione e implementazione di schemi SQL complessi;
+- Ottimizzazione e gestione delle query SQL;
+- Utilizzo di strumenti professionali quali **pgAdmin** per la gestione di database PostgreSQL;
+- Uso di **Visual Paradigm** per la modellazione e progettazione del database;
+- Applicazione di concetti di **First Order Logic (FOL)** per la definizione di vincoli e query avanzate;
+- Pratiche di **Software Engineering** applicate alla progettazione di sistemi di basi di dati.
+
+---
+
+## Struttura della repository
+
+- `./esercizi/`: contiene script SQL e query sviluppate come esercizi pratici;
+- `./Progetti/`: progetti completi con diagrammi UML e modelli di database;
+- 
+---
+
+## Strumenti utilizzati
+
+- **pgAdmin**: strumento grafico per la gestione di database PostgreSQL, utilizzato per la creazione, modifica e interrogazione dei database;
+- **Visual Paradigm**: software per la modellazione UML e la progettazione di basi di dati;
+- **SQL**: linguaggio di interrogazione e manipolazione dati, utilizzato per scrivere query efficienti e complesse;
+- **First Order Logic**: impiegata per esprimere vincoli logici e condizioni nelle basi di dati.
+
+---
+
+## Formule utili per il corso
+
 1) Pater noster
 Pater noster, qui es in cælis,
 sanctificetur nomen Tuum,
