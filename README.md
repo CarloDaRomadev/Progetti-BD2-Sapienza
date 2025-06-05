@@ -13,7 +13,7 @@
 
 **Progetti-BD2** è una raccolta personale di progetti e esercizi svolti per la preparazione all’esame di **Base di Dati 2° modulo**. 
 
-Il materiale copre diversi aspetti fondamentali della progettazione e gestione di basi di dati, questo è stato sviluppato per uso personale, può quindi contenere errori:
+Il materiale copre diversi aspetti fondamentali della progettazione e gestione di basi di dati, questo è stato sviluppato per uso personale, può quindi contenere errori...
 
 # Argomenti coperti:
 
